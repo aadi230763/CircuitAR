@@ -1,0 +1,11 @@
+Model Information:
+* title:	Breadboard Arduino
+* source:	https://sketchfab.com/3d-models/breadboard-arduino-e98f8d8a0e284b818f7540f118fb2ab5
+* author:	syukurmanhia3 (https://sketchfab.com/syukurmanhia3)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Breadboard Arduino" (https://sketchfab.com/3d-models/breadboard-arduino-e98f8d8a0e284b818f7540f118fb2ab5) by syukurmanhia3 (https://sketchfab.com/syukurmanhia3) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

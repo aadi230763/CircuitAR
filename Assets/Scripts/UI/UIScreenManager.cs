@@ -25,6 +25,18 @@ namespace CircuitAR.UI
 
         public void ShowScreen(string screenName)
         {
+            // If the target isn't registered (e.g. its Tools > Build UI step was never run) or its
+            // reference went missing after a rebuild, bail out instead of deactivating every screen
+            // and leaving nothing shown — that used to fail silently with no Console error.
+            bool targetExists = screens.Exists(e => e.screenName == screenName && e.screenRoot != null);
+            if (!targetExists)
+            {
+                Debug.LogWarning($"[CircuitAR] UIScreenManager.ShowScreen(\"{screenName}\") — no registered screen " +
+                                   "with that name (or its reference is missing). Staying on the current screen. " +
+                                   "Run that screen's Tools > Build UI step, then re-run the wiring that calls ShowScreen.");
+                return;
+            }
+
             foreach (var entry in screens)
             {
                 if (entry.screenRoot == null) continue;

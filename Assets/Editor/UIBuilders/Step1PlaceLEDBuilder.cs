@@ -23,12 +23,15 @@ namespace CircuitAR.EditorUIBuilders
             var blue = new Color(Accent.r, Accent.g, Accent.b, 0.75f);
             Leader(c, "Leader_LED", 157f, 196f, 204.5f, 198.2f, Accent);
             WorldLabel(c, "Label_LEDSelected", 60f, 196f, "LED · SELECTED", TextLightBlue, blue);
-            WorldLabel(c, "Hint_PlaceHere", 254.46f, 152.2f, "PLACE HERE · C14–C15", White(1f), blue, 9.5f, W.ExtraBold, 0.57f);
+            // Tapping this callout animates the LED from the parts tray onto the board. Its click
+            // and AR anchor are wired by Tools > CircuitAR > AR > 3 Wire Circuit Demo.
+            Callout(c, "Callout_PlaceLED", 254.46f, 152.2f, "PLACE HERE · C14–C15", "✓ LED PLACED",
+                White(1f), blue, 9.5f, W.ExtraBold, 0.57f);
 
             var p = BeginPanel(c, "Panel_Instruction", 16f, 617f, 358f);
             PStepChip(p, "STEP 1 OF 4", Accent, Rgba(47, 140, 255, 0.18f));
             PTitle(p, "PLACE THE LED");
-            PBody(p, "Place the LED in the highlighted holes. Drag it until it snaps — the longer leg (+) goes in C14.");
+            PBody(p, "Tap PLACE HERE to move the LED into the highlighted holes — the longer leg (+) goes in C14.");
             var next = PButton(p, "NEXT  →");
             EndPanel(p);
             Wire(next, ScreenNames.Step2);

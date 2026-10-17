@@ -29,12 +29,18 @@ namespace CircuitAR.EditorUIBuilders
             PStepChip(p, "FINAL STEP", Accent, Rgba(47, 140, 255, 0.18f));
             PTitle(p, "COMPLETE THE CIRCUIT");
             PBody(p, "Connection incomplete. Connect the final wire: LED (−) leg → negative rail.");
-            PChecklist(p, new[] { "BATTERY", "RESISTOR", "LED", "RETURN PATH" }, new[] { true, true, true, false });
-            PButtonRow(p, "RESET", "CHECK CIRCUIT", out var reset, out var check);
+            // Initial true/false values here are just the Figma placeholder look at build time —
+            // CircuitDemoController overwrites them at runtime to match actual placement state
+            // (wired by Tools > CircuitAR > AR > 3 Wire Circuit Demo).
+            PDynamicChecklist(p, new[] { "Battery", "Resistor", "LED", "ReturnPath" },
+                new[] { "BATTERY", "RESISTOR", "LED", "RETURN PATH" }, new[] { true, true, true, false });
+            PButtonRow(p, "RESET", "CHECK CIRCUIT", out var reset, out _);
             EndPanel(p);
 
             Wire(reset, ScreenNames.Step1);
-            Wire(check, ScreenNames.Complete);
+            // "CHECK CIRCUIT" is wired to CircuitDemoController.CheckCircuit() by
+            // Tools > CircuitAR > AR > 3 Wire Circuit Demo — it decides whether to advance to
+            // Canvas_FinalStepComplete based on actual placement state, not unconditionally.
 
             HomeIndicator(s.root);
             EndScreen(s);

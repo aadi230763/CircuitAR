@@ -1,0 +1,11 @@
+Model Information:
+* title:	10K Ohm Resistor
+* source:	https://sketchfab.com/3d-models/10k-ohm-resistor-170087afb2f1464dafe4875f0edb8283
+* author:	Zachary Ferguson (https://sketchfab.com/zfergus)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "10K Ohm Resistor" (https://sketchfab.com/3d-models/10k-ohm-resistor-170087afb2f1464dafe4875f0edb8283) by Zachary Ferguson (https://sketchfab.com/zfergus) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

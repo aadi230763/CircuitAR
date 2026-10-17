@@ -25,13 +25,16 @@ namespace CircuitAR.EditorUIBuilders
             Leader(c, "Leader_Correct", 152.42f, 248f, 152.42f, 260.2f, Green);
             Leader(c, "Leader_Drop", 257.26f, 200f, 257.26f, 217.2f, Accent);
             WorldLabel(c, "Label_CorrectConnection", 30f, 222f, "✓ CORRECT CONNECTION", Green, green, 10f, W.ExtraBold, 0.6f);
-            WorldLabel(c, "Label_DropOnD14", 214f, 174f, "DROP ON D14 · LED (+)", TextLightBlue, blue);
+            // Two callouts share the Figma "DROP ON D14" spot; CircuitDemoController shows only one
+            // at a time (resistor first, then wire). Wired by Tools > CircuitAR > AR > 3 Wire Circuit Demo.
+            Callout(c, "Callout_PlaceResistor", 214f, 174f, "PLACE RESISTOR · D11", "✓ RESISTOR PLACED", TextLightBlue, blue);
+            Callout(c, "Callout_ConnectWire", 214f, 174f, "DROP ON D14 · LED (+)", "✓ WIRE CONNECTED", TextLightBlue, blue);
 
             var p = BeginPanel(c, "Panel_Instruction", 16f, 571f, 358f);
             PDoneRow(p, "STEP 2 · PLACE THE RESISTOR", "DONE");
             PStepChip(p, "STEP 3 OF 4", Accent, Rgba(47, 140, 255, 0.18f));
             PTitle(p, "CONNECT THE LED");
-            PBody(p, "Drag the jumper wire from the resistor row (D11) to the LED’s + leg (D14).");
+            PBody(p, "Tap PLACE RESISTOR, then tap DROP ON D14 to run the jumper wire from the resistor row (D11) to the LED’s + leg.");
             PButtonRow(p, "RESET", "NEXT  →", out var reset, out var next);
             EndPanel(p);
 

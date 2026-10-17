@@ -579,6 +579,35 @@ namespace CircuitAR.EditorUIBuilders
             return b;
         }
 
+        /// A WorldLabel that's actually tappable and drives a guided AR placement step.
+        /// Re-pivoted to its centre so the idle pulse scales in place and PlacementCallout can
+        /// centre it over its breadboard slot at runtime.
+        public static PlacementCallout Callout(Transform parent, string name, float x, float y, string text, string confirmText,
+            Color textColor, Color border, float size = 10f, W weight = W.Bold, float tracking = 0.6f)
+        {
+            var rt = WorldLabel(parent, name, x, y, text, textColor, border, size, weight, tracking);
+            var sz = rt.sizeDelta;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(x + sz.x / 2f, -y - sz.y / 2f);
+
+            var button = MakeButton(rt);
+            button.transition = Selectable.Transition.None; // PlacementCallout handles its own visuals
+
+            var callout = rt.gameObject.AddComponent<PlacementCallout>();
+            callout.button = button;
+            callout.label = rt.GetComponentInChildren<TextMeshProUGUI>();
+            callout.fill = rt.GetComponent<Image>();
+            var strokeT = rt.Find("Stroke");
+            callout.stroke = strokeT != null ? strokeT.GetComponent<Image>() : null;
+            callout.idleText = text;
+            callout.confirmText = confirmText;
+            callout.idleTextColor = textColor;
+            callout.idleFillColor = callout.fill.color;
+            callout.idleStrokeColor = callout.stroke != null ? callout.stroke.color : Color.clear;
+            callout.defaultAnchoredPosition = rt.anchoredPosition;
+            return callout;
+        }
+
         // ------------------------------------------------------------------
         // Instruction panel (bottom card). Positioned by its Figma top, anchored to the bottom.
         // ------------------------------------------------------------------
@@ -652,6 +681,38 @@ namespace CircuitAR.EditorUIBuilders
                 rowH = Mathf.Max(rowH, h);
             }
             p.y = cy + rowH + 10f;
+        }
+
+        /// Like PChecklist, but each chip gets a ChecklistItemView so a runtime controller can
+        /// flip it between ok/missing later (e.g. as the player places components in AR).
+        /// `names` gives each chip a stable identifier distinct from its display label.
+        public static ChecklistItemView[] PDynamicChecklist(PanelCtx p, string[] names, string[] labels, bool[] ok)
+        {
+            var views = new ChecklistItemView[labels.Length];
+            float maxW = PanelInnerW(p);
+            float cx = 0f, cy = p.y, rowH = 0f;
+            for (int i = 0; i < labels.Length; i++)
+            {
+                Color c = ok[i] ? Green : Amber;
+                string text = (ok[i] ? "✓ " : "✗ ") + labels[i];
+                var chip = LabelBox(p.rt, "Chip_" + names[i], 0f, 0f, text, 10.5f, W.Bold, c, 0.42f, 8f, 5f, 8f,
+                    new Color(c.r, c.g, c.b, 0.14f), new Color(c.r, c.g, c.b, 0.45f));
+                float w = chip.sizeDelta.x, h = chip.sizeDelta.y;
+                if (cx > 0f && cx + w > maxW) { cx = 0f; cy += rowH + 6f; rowH = 0f; }
+                TopLeft(chip, 17f + cx, cy, w, h);
+                cx += w + 6f;
+                rowH = Mathf.Max(rowH, h);
+
+                var view = chip.gameObject.AddComponent<ChecklistItemView>();
+                view.itemLabel = labels[i];
+                view.label = chip.GetComponentInChildren<TextMeshProUGUI>();
+                view.fill = chip.GetComponent<Image>();
+                var strokeT = chip.Find("Stroke");
+                view.stroke = strokeT != null ? strokeT.GetComponent<Image>() : null;
+                views[i] = view;
+            }
+            p.y = cy + rowH + 10f;
+            return views;
         }
 
         public static void PButtonRow(PanelCtx p, string leftLabel, string rightLabel, out Button left, out Button right)
