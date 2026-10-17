@@ -1,3 +1,4 @@
+using CircuitAR.UI;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -18,16 +19,19 @@ namespace CircuitAR.EditorUIBuilders
 
             StatusBar(s.root);
 
-            // Figma hotspot: "tap to simulate marker detection" (sits behind every other control)
-            Wire(Hotspot(c, "Hotspot_SimulateMarkerDetection"), ScreenNames.Workspace);
-
             Wire(IconButton(c, "Btn_Back", "‹", 16f, 54f), ScreenNames.HomeStart);
             IconButton(c, "Btn_Help", "?", 334f, 54f);
             SessionPill(c, "AR CAMERA", 105f);
 
-            MultiLabelBox(c, "Pill_DetectionState", 101f, 150f,
+            // Reflects real Vuforia tracking state — flips to "MARKER FOUND" and the AR Camera →
+            // Marker Detected Workspace transition fires only on genuine detection. Driven by
+            // CircuitDemoController, wired by Tools > CircuitAR > AR > 3 Wire Circuit Demo.
+            var detectionPill = MultiLabelBox(c, "Pill_DetectionState", 101f, 150f,
                 new[] { Run.Icon(RoundedSprite(3, 0f), 7f, Amber), Run.T("SEARCHING FOR MARKER…", 10f, W.Bold, TextLightBlue, 1f) },
                 6f, 10f, 6f, -1f, PillBg);
+            var detection = detectionPill.gameObject.AddComponent<DetectionStatusPill>();
+            detection.icon = detectionPill.Find("Icon")?.GetComponent<Image>();
+            detection.label = detectionPill.GetComponentInChildren<TextMeshProUGUI>();
 
             // Instruction panel
             var p = BeginPanel(c, "Panel_Instruction", 35f, 680f, 320f);

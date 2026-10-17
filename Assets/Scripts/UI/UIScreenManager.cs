@@ -44,6 +44,9 @@ namespace CircuitAR.UI
             }
         }
 
+        public bool IsScreenActive(string screenName) =>
+            screens.Exists(e => e.screenName == screenName && e.screenRoot != null && e.screenRoot.activeSelf);
+
         public void RegisterScreen(string screenName, GameObject screenRoot)
         {
             var existing = screens.Find(e => e.screenName == screenName);

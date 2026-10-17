@@ -13,7 +13,9 @@ namespace CircuitAR.AR
     // menu item after rebuilding any of them.
     public class CircuitDemoController : MonoBehaviour
     {
-        private const string CompleteScreenName = "Canvas_FinalStepComplete"; // must match ScreenNames.Complete
+        private const string CompleteScreenName = "Canvas_FinalStepComplete";   // must match ScreenNames.Complete
+        private const string ARCameraScreenName = "Canvas_ARCamera";           // must match ScreenNames.ARCamera
+        private const string WorkspaceScreenName = "Canvas_MarkerDetectedWorkspace"; // must match ScreenNames.Workspace
 
         [Header("Animation")]
         public float moveDuration = 0.65f;
@@ -21,12 +23,16 @@ namespace CircuitAR.AR
         public float wireDrawDuration = 0.8f;
         public float wirePulseDuration = 0.35f;
         public float confirmHoldDuration = 0.6f;
+        public float detectionHoldDuration = 0.8f;
 
         [Header("AR content")]
         public GameObject arContentRoot;
         public PlaceableObject led;
         public PlaceableObject resistor;
         public WireConnector wire;
+
+        [Header("AR Camera screen")]
+        public DetectionStatusPill detectionPill;
 
         [Header("Step screens")]
         public PlacementCallout ledCallout;
@@ -44,6 +50,7 @@ namespace CircuitAR.AR
         public UIScreenManager screenManager;
 
         private bool busy;
+        private bool arCameraTransitionPending;
 
         private void Start()
         {
@@ -54,16 +61,19 @@ namespace CircuitAR.AR
         {
             StopAllCoroutines();
             busy = false;
+            arCameraTransitionPending = false;
             if (led != null) led.ResetToTray();
             if (resistor != null) resistor.ResetToTray();
             if (wire != null) wire.ResetToTray();
             if (ledCallout != null) ledCallout.ResetState();
             if (resistorCallout != null) resistorCallout.ResetState();
             if (wireCallout != null) wireCallout.ResetState();
+            if (detectionPill != null) detectionPill.SetSearching();
             RefreshStepUI();
         }
 
-        // Wired to the ImageTarget's DefaultObserverEventHandler.OnTargetFound / OnTargetLost.
+        // Wired to the ImageTarget's DefaultObserverEventHandler.OnTargetFound / OnTargetLost
+        // (alongside HandleMarkerFound/HandleMarkerLost below — both fire on the same events).
         public void ShowARContent()
         {
             if (arContentRoot != null) arContentRoot.SetActive(true);
@@ -72,6 +82,35 @@ namespace CircuitAR.AR
         public void HideARContent()
         {
             if (arContentRoot != null) arContentRoot.SetActive(false);
+        }
+
+        // Real detection driving the AR Camera screen: only acts while that screen is the one
+        // currently shown, and only once per detection (guarded so a flickering OnTargetFound
+        // during the hold can't start a second overlapping transition).
+        public void HandleMarkerFound()
+        {
+            if (arCameraTransitionPending) return;
+            if (screenManager == null || !screenManager.IsScreenActive(ARCameraScreenName)) return;
+
+            arCameraTransitionPending = true;
+            if (detectionPill != null) detectionPill.PlayFoundAnimation(detectionHoldDuration);
+            StartCoroutine(ArCameraDetectedRoutine());
+        }
+
+        private IEnumerator ArCameraDetectedRoutine()
+        {
+            yield return new WaitForSeconds(detectionHoldDuration);
+            arCameraTransitionPending = false;
+            if (screenManager != null) screenManager.ShowScreen(WorkspaceScreenName);
+        }
+
+        // While still on the AR Camera screen (i.e. before the transition above has fired), losing
+        // tracking just reverts the pill to "searching" — it never navigates, so once the player
+        // has moved past this screen, losing tracking elsewhere is untouched by this method.
+        public void HandleMarkerLost()
+        {
+            if (screenManager != null && screenManager.IsScreenActive(ARCameraScreenName) && detectionPill != null)
+                detectionPill.SetSearching();
         }
 
         // Wired to Callout_PlaceLED (screen 04).

@@ -59,16 +59,19 @@ namespace CircuitAR.EditorAR
             var resistorAnchor = arContent.Find("Anchor_ResistorSlot");
             var wireAnchor = arContent.Find("Anchor_WireMid");
 
+            var arCameraRoot = FindRoot(active, ScreenNames.ARCamera);
             var step1Root = FindRoot(active, ScreenNames.Step1);
             var step2Root = FindRoot(active, ScreenNames.Step2);
             var incompleteRoot = FindRoot(active, ScreenNames.Incomplete);
-            if (step1Root == null || step2Root == null || incompleteRoot == null)
+            if (arCameraRoot == null || step1Root == null || step2Root == null || incompleteRoot == null)
             {
                 EditorUtility.DisplayDialog("Step UI not found",
-                    "Run Tools > Build UI > 04 Step 1 Place LED, 05 Step 2-3 Resistor Wire, and " +
+                    "Run Tools > Build UI > 02 AR Camera, 04 Step 1 Place LED, 05 Step 2-3 Resistor Wire, and " +
                     "06A Final Step Incomplete first.", "OK");
                 return;
             }
+
+            var detectionPill = arCameraRoot.transform.Find("UI_ARCameraRoot/SafeArea/Pill_DetectionState")?.GetComponent<DetectionStatusPill>();
 
             const string step1 = "UI_Step1PlaceLEDRoot/SafeArea/";
             const string step2 = "UI_Step2And3ResistorWireRoot/SafeArea/";
@@ -87,17 +90,18 @@ namespace CircuitAR.EditorAR
             var screenManager = Object.FindObjectOfType<UIScreenManager>();
 
             if (led == null || resistor == null || wire == null || ledAnchor == null || resistorAnchor == null || wireAnchor == null ||
-                ledCallout == null || step1Next == null || resistorCallout == null || wireCallout == null || step2Next == null ||
+                detectionPill == null || ledCallout == null || step1Next == null || resistorCallout == null || wireCallout == null || step2Next == null ||
                 checkButton == null || batteryItem == null || resistorItem == null || ledItem == null || returnPathItem == null || screenManager == null)
             {
                 Debug.LogError("[CircuitAR] Wiring failed — missing piece(s): " +
                     $"LED={led != null}, Resistor={resistor != null}, Wire={wire != null}, " +
                     $"Anchors={ledAnchor != null}/{resistorAnchor != null}/{wireAnchor != null}, " +
+                    $"DetectionPill={detectionPill != null}, " +
                     $"LedCallout={ledCallout != null}, Step1Next={step1Next != null}, ResistorCallout={resistorCallout != null}, " +
                     $"WireCallout={wireCallout != null}, Step2Next={step2Next != null}, " +
                     $"CheckButton={checkButton != null}, BatteryChip={batteryItem != null}, ResistorChip={resistorItem != null}, " +
                     $"LEDChip={ledItem != null}, ReturnPathChip={returnPathItem != null}, ScreenManager={screenManager != null}. " +
-                    "Re-run the build steps named in the dialogs for menu items 1/2 and Build UI 04/05/06A, in order.");
+                    "Re-run the build steps named in the dialogs for menu items 1/2 and Build UI 02/04/05/06A, in order.");
                 return;
             }
 
@@ -120,6 +124,7 @@ namespace CircuitAR.EditorAR
             ctrl.ledChecklistItem = ledItem;
             ctrl.returnPathChecklistItem = returnPathItem;
             ctrl.screenManager = screenManager;
+            ctrl.detectionPill = detectionPill;
             EditorUtility.SetDirty(ctrl);
 
             WireCallout(ledCallout, ledAnchor, ctrl.PlaceLed);
@@ -139,11 +144,15 @@ namespace CircuitAR.EditorAR
             var handler = imageTarget.GetComponent<DefaultObserverEventHandler>();
             if (handler != null)
             {
+                // Two listeners each: the Phase 4 ARContent show/hide, plus the AR Camera screen's
+                // real-detection-driven pill + transition (replacing the old tap-to-simulate hotspot).
                 ClearPersistentListeners(handler.OnTargetFound);
                 UnityEventTools.AddPersistentListener(handler.OnTargetFound, ctrl.ShowARContent);
+                UnityEventTools.AddPersistentListener(handler.OnTargetFound, ctrl.HandleMarkerFound);
 
                 ClearPersistentListeners(handler.OnTargetLost);
                 UnityEventTools.AddPersistentListener(handler.OnTargetLost, ctrl.HideARContent);
+                UnityEventTools.AddPersistentListener(handler.OnTargetLost, ctrl.HandleMarkerLost);
             }
             else
             {
@@ -154,9 +163,10 @@ namespace CircuitAR.EditorAR
 
             EditorSceneManager.MarkSceneDirty(active);
             Selection.activeGameObject = ctrlGO;
-            Debug.Log("[CircuitAR] Circuit demo wired: ARContent show/hide on target found/lost, " +
-                       "guided LED placement on screen 04, resistor then wire on screen 05 (NEXT gated on each), " +
-                       "and CHECK CIRCUIT on screen 06A reads actual placement state. Save the scene.");
+            Debug.Log("[CircuitAR] Circuit demo wired: real-detection pill + transition on screen 02, " +
+                       "ARContent show/hide on target found/lost, guided LED placement on screen 04, " +
+                       "resistor then wire on screen 05 (NEXT gated on each), and CHECK CIRCUIT on " +
+                       "screen 06A reads actual placement state. Save the scene.");
         }
 
         private static void WireCallout(PlacementCallout callout, Transform anchor, UnityEngine.Events.UnityAction onTap)
