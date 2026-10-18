@@ -91,11 +91,14 @@ namespace CircuitAR.EditorUIBuilders
             var group = NewRect("Group_Q" + (index + 1), parent);
             Fill(group);
 
-            Txt(group, $"QUESTION {index + 1} OF {total}", 24f, 170f, 12f, W.ExtraBold, Accent, 1.44f, 0f, 0f,
+            // 256/278 match the plate art's (Plate_08A_Quiz.png) original question position — the
+            // resistor illustration baked into that background sits just above this, so moving
+            // these up (as an earlier version of this screen did) overlaps it.
+            Txt(group, $"QUESTION {index + 1} OF {total}", 24f, 256f, 12f, W.ExtraBold, Accent, 1.44f, 0f, 0f,
                 TextAlignmentOptions.TopLeft, "Txt_QuestionLabel");
-            var questionTxt = Txt(group, question, 24f, 192f, 20f, W.ExtraBold, White(1f), 0f, 342f, 26f,
+            var questionTxt = Txt(group, question, 24f, 278f, 20f, W.ExtraBold, White(1f), 0f, 342f, 26f,
                 TextAlignmentOptions.TopLeft, "Txt_Question");
-            float y = 192f + questionTxt.rectTransform.sizeDelta.y + 24f;
+            float y = 278f + questionTxt.rectTransform.sizeDelta.y + 24f;
 
             var view = group.gameObject.AddComponent<QuizQuestionView>();
             view.correctIndex = correctIndex;
