@@ -5,7 +5,7 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/VuforiaTest.unity
     guid: dad2041906774f147a4d8ffc19d5d906
   - enabled: 1
