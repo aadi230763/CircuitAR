@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using CircuitAR.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -58,14 +59,19 @@ namespace CircuitAR.AR
         public AudioClip audioPlaceResistor;
         public AudioClip audioConnectWire;
         public AudioClip audioHowItWorks;
+        public AudioClip audioWorkspace;
         // Add further Audio_* fields here (e.g. quiz questions later) — PlayClip/PlayNamed*
         // methods below follow the same one-line pattern.
 
-        // How It Works screen: TAKE QUIZ stays disabled until Audio_HowItWorks finishes playing.
-        [Header("How It Works screen")]
+        // "Proceed" buttons that stay disabled until their screen's clip finishes playing.
+        [Header("Gated buttons")]
         public Button howItWorksQuizButton;
+        public Button workspaceLedCardButton;
 
-        private Coroutine howItWorksRoutine;
+        // Keyed by the gated button, so PlayGatedAudio/StopGatedAudio can share one
+        // implementation across every screen that uses this pattern (How It Works, Workspace, ...)
+        // instead of duplicating a disable → play → wait clip.length → enable routine per screen.
+        private readonly Dictionary<Button, Coroutine> gatedButtonRoutines = new Dictionary<Button, Coroutine>();
         private AudioSource audioSource;
 
         private const string AudioMutePrefKey = "CircuitAR_AudioMuted";
@@ -124,37 +130,53 @@ namespace CircuitAR.AR
         // is a plain SetActive() and this project already relies on OnEnable for "sub-step shown."
         public void PlayConnectWireAudio() => PlayClip(audioConnectWire);
 
-        // Wired to the How It Works screen's ScreenAudioTrigger (no delay). TAKE QUIZ is disabled
-        // immediately, then re-enabled either when the clip finishes or right away if there's no
-        // clip assigned or audio is muted (so muting never permanently locks the button out).
-        public void PlayHowItWorksAudio()
+        // Disables `gatedButton`, plays `clip`, and re-enables it once the clip finishes — or
+        // immediately if the clip isn't assigned or audio is muted, so muting can never
+        // permanently lock a button out. Shared by every screen with a "wait for the narration,
+        // then proceed" button (How It Works, Workspace, ...).
+        public void PlayGatedAudio(AudioClip clip, Button gatedButton)
         {
-            if (howItWorksQuizButton != null) howItWorksQuizButton.interactable = false;
-            if (howItWorksRoutine != null) { StopCoroutine(howItWorksRoutine); howItWorksRoutine = null; }
+            if (gatedButton != null) gatedButton.interactable = false;
+            if (gatedButton != null && gatedButtonRoutines.TryGetValue(gatedButton, out var running) && running != null)
+                StopCoroutine(running);
 
-            if (audioHowItWorks == null || IsAudioMuted)
+            if (clip == null || IsAudioMuted)
             {
-                if (howItWorksQuizButton != null) howItWorksQuizButton.interactable = true;
+                if (gatedButton != null) gatedButton.interactable = true;
                 return;
             }
-            PlayClip(audioHowItWorks);
-            howItWorksRoutine = StartCoroutine(EnableQuizButtonAfter(audioHowItWorks.length));
+            PlayClip(clip);
+            if (gatedButton != null)
+                gatedButtonRoutines[gatedButton] = StartCoroutine(EnableButtonAfter(gatedButton, clip.length));
         }
 
-        private IEnumerator EnableQuizButtonAfter(float seconds)
+        private IEnumerator EnableButtonAfter(Button button, float seconds)
         {
             yield return new WaitForSeconds(seconds);
-            howItWorksRoutine = null;
-            if (howItWorksQuizButton != null) howItWorksQuizButton.interactable = true;
+            gatedButtonRoutines.Remove(button);
+            if (button != null) button.interactable = true;
         }
 
-        // Wired to the How It Works screen's ScreenAudioTrigger onHide — stops both the clip and
-        // the pending enable-timer if the student backs out before it finishes.
-        public void StopHowItWorksAudio()
+        // Stops the clip and cancels `gatedButton`'s pending enable-timer, e.g. when the student
+        // backs out of the screen before the clip finishes.
+        public void StopGatedAudio(Button gatedButton)
         {
             StopAudio();
-            if (howItWorksRoutine != null) { StopCoroutine(howItWorksRoutine); howItWorksRoutine = null; }
+            if (gatedButton != null && gatedButtonRoutines.TryGetValue(gatedButton, out var running) && running != null)
+            {
+                StopCoroutine(running);
+                gatedButtonRoutines.Remove(gatedButton);
+            }
         }
+
+        // Wired to the How It Works screen's ScreenAudioTrigger (no delay).
+        public void PlayHowItWorksAudio() => PlayGatedAudio(audioHowItWorks, howItWorksQuizButton);
+        public void StopHowItWorksAudio() => StopGatedAudio(howItWorksQuizButton);
+
+        // Wired to the Workspace screen's ScreenAudioTrigger (no delay) — gates the selected
+        // (LED) circuit card until Audio_Workspace finishes.
+        public void PlayWorkspaceAudio() => PlayGatedAudio(audioWorkspace, workspaceLedCardButton);
+        public void StopWorkspaceAudio() => StopGatedAudio(workspaceLedCardButton);
 
         public void ResetDemo()
         {
@@ -171,15 +193,37 @@ namespace CircuitAR.AR
             RefreshStepUI();
         }
 
+        // Grace period before a tracking drop actually hides the 3D content. Real handheld
+        // tracking flickers briefly and often — especially right as the student moves the phone
+        // to set it down (exactly what Audio_Workspace is telling them to do) — so without this,
+        // the breadboard pops in and out during completely normal use. Cancelled if tracking
+        // comes back before it elapses. (The real fix is Vuforia's own Extended Tracking on the
+        // Image Target, which should also be enabled — this debounce is a safety net on top.)
+        public float arContentHideDelay = 1.0f;
+        private Coroutine hideArContentRoutine;
+
         // Wired to the ImageTarget's DefaultObserverEventHandler.OnTargetFound / OnTargetLost
         // (alongside HandleMarkerFound/HandleMarkerLost below — both fire on the same events).
         public void ShowARContent()
         {
+            if (hideArContentRoutine != null)
+            {
+                StopCoroutine(hideArContentRoutine);
+                hideArContentRoutine = null;
+            }
             if (arContentRoot != null) arContentRoot.SetActive(true);
         }
 
         public void HideARContent()
         {
+            if (hideArContentRoutine != null) StopCoroutine(hideArContentRoutine);
+            hideArContentRoutine = StartCoroutine(HideARContentAfterDelay());
+        }
+
+        private IEnumerator HideARContentAfterDelay()
+        {
+            yield return new WaitForSeconds(arContentHideDelay);
+            hideArContentRoutine = null;
             if (arContentRoot != null) arContentRoot.SetActive(false);
         }
 

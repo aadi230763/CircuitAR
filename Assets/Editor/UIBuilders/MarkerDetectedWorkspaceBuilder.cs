@@ -1,3 +1,4 @@
+using CircuitAR.Audio;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -19,8 +20,13 @@ namespace CircuitAR.EditorUIBuilders
             StatusBar(s.root);
             Wire(IconButton(c, "Btn_Back", "‹", 16f, 54f), ScreenNames.ARCamera);
             IconButton(c, "Btn_Help", "?", 334f, 54f);
+            MuteButton(c, 284f, 54f);
             SessionPill(c, "AR WORKSPACE", 130f);
             TrackingPill(c);
+
+            // Plays Audio_Workspace as soon as this screen appears (no delay). Wired to
+            // CircuitDemoController by Tools > CircuitAR > AR > 3 Wire Circuit Demo.
+            s.canvas.gameObject.AddComponent<ScreenAudioTrigger>();
 
             // "Marker detected" notification (width hugs its text, centred)
             var n = NewRect("Notification_MarkerDetected", c);
@@ -75,7 +81,14 @@ namespace CircuitAR.EditorUIBuilders
                 Txt(card, steps[i], 13f, 74.4f, 10f, W.Regular, sel ? TextLightBlue : TextMuted, 0f, 0f, 0f,
                     TextAlignmentOptions.TopLeft, "Txt_Steps");
                 var btn = MakeButton(card);
-                if (sel) Wire(btn, ScreenNames.Step1);
+                if (sel)
+                {
+                    Wire(btn, ScreenNames.Step1);
+                    // Starts disabled — CircuitDemoController re-enables it once Audio_Workspace
+                    // finishes (or immediately if unassigned/muted). Build-time value only, so the
+                    // saved scene matches the runtime gate before Play.
+                    btn.interactable = false;
+                }
                 // TODO: Series / Parallel circuits aren't built yet.
             }
             p.y += 100f + 10f;
