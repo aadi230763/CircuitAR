@@ -1,3 +1,4 @@
+using CircuitAR.Audio;
 using UnityEditor;
 using UnityEngine;
 using static CircuitAR.EditorUIBuilders.UIBuilderCommon;
@@ -17,8 +18,13 @@ namespace CircuitAR.EditorUIBuilders
             StatusBar(s.root);
             Wire(IconButton(c, "Btn_Back", "‹", 16f, 54f), ScreenNames.Step1);
             IconButton(c, "Btn_Help", "?", 334f, 54f);
+            MuteButton(c, 284f, 54f);
             SessionPill(c, "LED CIRCUIT", 180f, new[] { Green, Green, Accent, White(0.25f) });
             TrackingPill(c);
+
+            // Plays Audio_PlaceResistor as soon as this screen appears (no delay). Wired to
+            // CircuitDemoController by Tools > CircuitAR > AR > 3 Wire Circuit Demo.
+            s.canvas.gameObject.AddComponent<ScreenAudioTrigger>();
 
             var green = new Color(Green.r, Green.g, Green.b, 0.75f);
             var blue = new Color(Accent.r, Accent.g, Accent.b, 0.75f);
@@ -28,7 +34,12 @@ namespace CircuitAR.EditorUIBuilders
             // Two callouts share the Figma "DROP ON D14" spot; CircuitDemoController shows only one
             // at a time (resistor first, then wire). Wired by Tools > CircuitAR > AR > 3 Wire Circuit Demo.
             Callout(c, "Callout_PlaceResistor", 214f, 174f, "PLACE RESISTOR · D11", "✓ RESISTOR PLACED", TextLightBlue, blue);
-            Callout(c, "Callout_ConnectWire", 214f, 174f, "DROP ON D14 · LED (+)", "✓ WIRE CONNECTED", TextLightBlue, blue);
+            var wireCallout = Callout(c, "Callout_ConnectWire", 214f, 174f, "DROP ON D14 · LED (+)", "✓ WIRE CONNECTED", TextLightBlue, blue);
+
+            // Plays Audio_ConnectWire exactly when this callout becomes visible — i.e. once the
+            // resistor is placed and the wire sub-step begins (PlacementCallout.SetVisible is a
+            // plain SetActive(), so OnEnable fires at the right moment without extra bookkeeping).
+            wireCallout.gameObject.AddComponent<ScreenAudioTrigger>();
 
             var p = BeginPanel(c, "Panel_Instruction", 16f, 571f, 358f);
             PDoneRow(p, "STEP 2 · PLACE THE RESISTOR", "DONE");

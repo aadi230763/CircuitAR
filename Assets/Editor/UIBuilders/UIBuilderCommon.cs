@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using CircuitAR.UI;
+using CircuitAR.Audio;
 using static CircuitAR.EditorUIBuilders.UIStyleConstants;
 
 namespace CircuitAR.EditorUIBuilders
@@ -989,6 +990,50 @@ namespace CircuitAR.EditorUIBuilders
             if (y >= 4f && y < 12f) return Mathf.Abs(dx) <= 11f;
             return false;
         });
+
+        public static Sprite SpeakerIcon(bool muted) => IconSprite(muted ? "speaker_muted" : "speaker_on", (x, y) =>
+        {
+            bool body = Mathf.Abs(x - 40f) <= 10f && Mathf.Abs(y - 64f) <= 14f;
+            float t = Mathf.Clamp01((x - 50f) / 28f);
+            bool horn = x >= 50f && x <= 78f && Mathf.Abs(y - 64f) <= 14f + t * 20f;
+            bool cone = body || horn;
+            if (muted)
+            {
+                bool slash = x >= 16f && x <= 112f && y >= 16f && y <= 112f && Mathf.Abs((y - 64f) - (x - 64f)) <= 6f;
+                return cone || slash;
+            }
+            float adx = x - 78f, ady = y - 64f;
+            float r = Mathf.Sqrt(adx * adx + ady * ady);
+            float ang = Mathf.Abs(Mathf.Atan2(ady, adx));
+            bool arc1 = r >= 12f && r <= 16f && ang <= 50f * Mathf.Deg2Rad;
+            bool arc2 = r >= 22f && r <= 26f && ang <= 50f * Mathf.Deg2Rad;
+            return cone || arc1 || arc2;
+        });
+
+        /// Circular icon button whose glyph is a sprite (e.g. SpeakerIcon) instead of a text glyph.
+        public static Button IconButtonSprite(Transform parent, string name, Sprite sprite, float x, float y)
+        {
+            var rt = Box(parent, name, x, y, 40f, 40f, 20f, IconButtonBg, White(0.14f));
+            var iconRt = NewRect("Icon", rt);
+            TopLeft(iconRt, 11f, 11f, 18f, 18f);
+            var img = iconRt.gameObject.AddComponent<Image>();
+            img.sprite = sprite;
+            img.raycastTarget = false;
+            return MakeButton(rt);
+        }
+
+        /// Speaker/mute toggle for narrated screens — same circular icon-button style as Btn_Help.
+        public static void MuteButton(Transform parent, float x, float y)
+        {
+            var onSprite = SpeakerIcon(muted: false);
+            var offSprite = SpeakerIcon(muted: true);
+            var button = IconButtonSprite(parent, "Btn_Mute", onSprite, x, y);
+            var toggle = button.gameObject.AddComponent<AudioMuteToggle>();
+            toggle.icon = button.transform.Find("Icon")?.GetComponent<Image>();
+            toggle.onSprite = onSprite;
+            toggle.offSprite = offSprite;
+            UnityEventTools.AddPersistentListener(button.onClick, toggle.Toggle);
+        }
 
         public static Sprite AppIconSprite()
         {

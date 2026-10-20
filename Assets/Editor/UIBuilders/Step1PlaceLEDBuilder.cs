@@ -1,3 +1,4 @@
+using CircuitAR.Audio;
 using UnityEditor;
 using UnityEngine;
 using static CircuitAR.EditorUIBuilders.UIBuilderCommon;
@@ -17,8 +18,13 @@ namespace CircuitAR.EditorUIBuilders
             StatusBar(s.root);
             Wire(IconButton(c, "Btn_Back", "‹", 16f, 54f), ScreenNames.Workspace);
             IconButton(c, "Btn_Help", "?", 334f, 54f);
+            MuteButton(c, 284f, 54f);
             SessionPill(c, "LED CIRCUIT", 180f, new[] { Accent, White(0.25f), White(0.25f), White(0.25f) });
             TrackingPill(c);
+
+            // Plays Audio_PlaceLED as soon as this screen appears (no delay). Wired to
+            // CircuitDemoController by Tools > CircuitAR > AR > 3 Wire Circuit Demo.
+            s.canvas.gameObject.AddComponent<ScreenAudioTrigger>();
 
             var blue = new Color(Accent.r, Accent.g, Accent.b, 0.75f);
             Leader(c, "Leader_LED", 157f, 196f, 204.5f, 198.2f, Accent);

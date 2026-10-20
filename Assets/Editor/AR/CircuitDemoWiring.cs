@@ -1,5 +1,6 @@
 using System.Linq;
 using CircuitAR.AR;
+using CircuitAR.Audio;
 using CircuitAR.EditorUIBuilders;
 using CircuitAR.UI;
 using UnityEditor;
@@ -81,6 +82,14 @@ namespace CircuitAR.EditorAR
             var wireCallout = step2Root.transform.Find(step2 + "Callout_ConnectWire")?.GetComponent<PlacementCallout>();
             var step2Next = step2Root.transform.Find(step2 + "Panel_Instruction/Btn_NEXT")?.GetComponent<Button>();
 
+            // Audio triggers: the Welcome/PlaceLED/PlaceResistor ones sit on their screen's own
+            // canvas root; the ConnectWire one sits on Callout_ConnectWire itself (fires when that
+            // callout becomes visible, i.e. once the resistor is placed).
+            var welcomeAudio = arCameraRoot.GetComponent<ScreenAudioTrigger>();
+            var placeLedAudio = step1Root.GetComponent<ScreenAudioTrigger>();
+            var placeResistorAudio = step2Root.GetComponent<ScreenAudioTrigger>();
+            var connectWireAudio = step2Root.transform.Find(step2 + "Callout_ConnectWire")?.GetComponent<ScreenAudioTrigger>();
+
             const string incompletePanel = "UI_FinalStepIncompleteRoot/SafeArea/Panel_Instruction/";
             var checkButton = incompleteRoot.transform.Find(incompletePanel + "Btn_CHECKCIRCUIT")?.GetComponent<Button>();
             var batteryItem = incompleteRoot.transform.Find(incompletePanel + "Chip_Battery")?.GetComponent<ChecklistItemView>();
@@ -91,7 +100,8 @@ namespace CircuitAR.EditorAR
 
             if (led == null || resistor == null || wire == null || ledAnchor == null || resistorAnchor == null || wireAnchor == null ||
                 detectionPill == null || ledCallout == null || step1Next == null || resistorCallout == null || wireCallout == null || step2Next == null ||
-                checkButton == null || batteryItem == null || resistorItem == null || ledItem == null || returnPathItem == null || screenManager == null)
+                checkButton == null || batteryItem == null || resistorItem == null || ledItem == null || returnPathItem == null || screenManager == null ||
+                welcomeAudio == null || placeLedAudio == null || placeResistorAudio == null || connectWireAudio == null)
             {
                 Debug.LogError("[CircuitAR] Wiring failed — missing piece(s): " +
                     $"LED={led != null}, Resistor={resistor != null}, Wire={wire != null}, " +
@@ -100,7 +110,9 @@ namespace CircuitAR.EditorAR
                     $"LedCallout={ledCallout != null}, Step1Next={step1Next != null}, ResistorCallout={resistorCallout != null}, " +
                     $"WireCallout={wireCallout != null}, Step2Next={step2Next != null}, " +
                     $"CheckButton={checkButton != null}, BatteryChip={batteryItem != null}, ResistorChip={resistorItem != null}, " +
-                    $"LEDChip={ledItem != null}, ReturnPathChip={returnPathItem != null}, ScreenManager={screenManager != null}. " +
+                    $"LEDChip={ledItem != null}, ReturnPathChip={returnPathItem != null}, ScreenManager={screenManager != null}, " +
+                    $"WelcomeAudio={welcomeAudio != null}, PlaceLedAudio={placeLedAudio != null}, " +
+                    $"PlaceResistorAudio={placeResistorAudio != null}, ConnectWireAudio={connectWireAudio != null}. " +
                     "Re-run the build steps named in the dialogs for menu items 1/2 and Build UI 02/04/05/06A, in order.");
                 return;
             }
@@ -130,6 +142,11 @@ namespace CircuitAR.EditorAR
             WireCallout(ledCallout, ledAnchor, ctrl.PlaceLed);
             WireCallout(resistorCallout, resistorAnchor, ctrl.PlaceResistor);
             WireCallout(wireCallout, wireAnchor, ctrl.ConnectWire);
+
+            WireAudioTrigger(welcomeAudio, ctrl.PlayWelcomeAudio, ctrl.StopAudio);
+            WireAudioTrigger(placeLedAudio, ctrl.PlayPlaceLedAudio, ctrl.StopAudio);
+            WireAudioTrigger(placeResistorAudio, ctrl.PlayPlaceResistorAudio, ctrl.StopAudio);
+            WireAudioTrigger(connectWireAudio, ctrl.PlayConnectWireAudio, ctrl.StopAudio);
 
             // NEXT keeps its existing ShowScreen listener from Build UI 04/05; the controller only
             // toggles interactable. Start disabled so the saved scene matches the runtime gate.
@@ -165,8 +182,9 @@ namespace CircuitAR.EditorAR
             Selection.activeGameObject = ctrlGO;
             Debug.Log("[CircuitAR] Circuit demo wired: real-detection pill + transition on screen 02, " +
                        "ARContent show/hide on target found/lost, guided LED placement on screen 04, " +
-                       "resistor then wire on screen 05 (NEXT gated on each), and CHECK CIRCUIT on " +
-                       "screen 06A reads actual placement state. Save the scene.");
+                       "resistor then wire on screen 05 (NEXT gated on each), CHECK CIRCUIT on screen 06A " +
+                       "reads actual placement state, and Welcome/PlaceLED/PlaceResistor/ConnectWire audio " +
+                       "triggers are wired (clips themselves still need dragging into CircuitDemoController). Save the scene.");
         }
 
         private static void WireCallout(PlacementCallout callout, Transform anchor, UnityEngine.Events.UnityAction onTap)
@@ -175,6 +193,15 @@ namespace CircuitAR.EditorAR
             ClearPersistentListeners(callout.button.onClick);
             UnityEventTools.AddPersistentListener(callout.button.onClick, onTap);
             EditorUtility.SetDirty(callout);
+        }
+
+        private static void WireAudioTrigger(ScreenAudioTrigger trigger, UnityEngine.Events.UnityAction onShow, UnityEngine.Events.UnityAction onHide)
+        {
+            ClearPersistentListeners(trigger.onShow);
+            UnityEventTools.AddPersistentListener(trigger.onShow, onShow);
+            ClearPersistentListeners(trigger.onHide);
+            UnityEventTools.AddPersistentListener(trigger.onHide, onHide);
+            EditorUtility.SetDirty(trigger);
         }
 
         private static void ClearPersistentListeners(UnityEngine.Events.UnityEventBase evt)

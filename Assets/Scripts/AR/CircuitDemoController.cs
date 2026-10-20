@@ -49,13 +49,74 @@ namespace CircuitAR.AR
         public ChecklistItemView returnPathChecklistItem;
         public UIScreenManager screenManager;
 
+        // DECISION: audio lives on CircuitDemoController rather than a separate AudioManager —
+        // it's already the persistent, always-present object every screen-driven event (marker
+        // detection, step placement) routes through, so this avoids a second singleton.
+        [Header("Audio")]
+        public AudioClip audioWelcome;
+        public AudioClip audioPlaceLed;
+        public AudioClip audioPlaceResistor;
+        public AudioClip audioConnectWire;
+        // Add further Audio_* fields here (e.g. quiz questions later) — PlayClip/PlayNamed*
+        // methods below follow the same one-line pattern.
+
+        private AudioSource audioSource;
+
+        private const string AudioMutePrefKey = "CircuitAR_AudioMuted";
+        public static bool IsAudioMuted
+        {
+            get => PlayerPrefs.GetInt(AudioMutePrefKey, 0) == 1;
+            set
+            {
+                PlayerPrefs.SetInt(AudioMutePrefKey, value ? 1 : 0);
+                PlayerPrefs.Save();
+            }
+        }
+
         private bool busy;
         private bool arCameraTransitionPending;
+
+        private void Awake()
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f; // 2D — this is narration, not a positioned AR sound
+        }
 
         private void Start()
         {
             ResetDemo();
         }
+
+        // Stops whatever's currently playing before starting the new clip, so narration never
+        // overlaps. Null-safe: an unassigned clip (or being muted) just does nothing.
+        public void PlayClip(AudioClip clip)
+        {
+            if (clip == null || IsAudioMuted || audioSource == null) return;
+            audioSource.Stop();
+            audioSource.clip = clip;
+            audioSource.Play();
+        }
+
+        public void StopAudio()
+        {
+            if (audioSource != null) audioSource.Stop();
+        }
+
+        // Wired to the AR Camera screen's ScreenAudioTrigger (2s delay) — screen-appearance
+        // driven, not marker-detection driven, per the brief.
+        public void PlayWelcomeAudio() => PlayClip(audioWelcome);
+
+        // Wired to the Step 1 screen's ScreenAudioTrigger (no delay).
+        public void PlayPlaceLedAudio() => PlayClip(audioPlaceLed);
+
+        // Wired to the Step 2-3 screen's ScreenAudioTrigger (no delay).
+        public void PlayPlaceResistorAudio() => PlayClip(audioPlaceResistor);
+
+        // Wired to Callout_ConnectWire's own ScreenAudioTrigger — fires exactly when that callout
+        // becomes visible (i.e. once the resistor is placed), since PlacementCallout.SetVisible
+        // is a plain SetActive() and this project already relies on OnEnable for "sub-step shown."
+        public void PlayConnectWireAudio() => PlayClip(audioConnectWire);
 
         public void ResetDemo()
         {

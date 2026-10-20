@@ -1,3 +1,4 @@
+using CircuitAR.Audio;
 using CircuitAR.UI;
 using TMPro;
 using UnityEditor;
@@ -21,7 +22,14 @@ namespace CircuitAR.EditorUIBuilders
 
             Wire(IconButton(c, "Btn_Back", "‹", 16f, 54f), ScreenNames.HomeStart);
             IconButton(c, "Btn_Help", "?", 334f, 54f);
+            MuteButton(c, 284f, 54f);
             SessionPill(c, "AR CAMERA", 105f);
+
+            // Plays Audio_Welcome 2s after this screen appears — tied to the screen showing, not
+            // to marker detection. onShow/onHide are wired to CircuitDemoController by
+            // Tools > CircuitAR > AR > 3 Wire Circuit Demo.
+            var welcomeAudio = s.canvas.gameObject.AddComponent<ScreenAudioTrigger>();
+            welcomeAudio.delaySeconds = 2f;
 
             // Reflects real Vuforia tracking state — flips to "MARKER FOUND" and the AR Camera →
             // Marker Detected Workspace transition fires only on genuine detection. Driven by
