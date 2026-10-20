@@ -57,9 +57,15 @@ namespace CircuitAR.AR
         public AudioClip audioPlaceLed;
         public AudioClip audioPlaceResistor;
         public AudioClip audioConnectWire;
+        public AudioClip audioHowItWorks;
         // Add further Audio_* fields here (e.g. quiz questions later) — PlayClip/PlayNamed*
         // methods below follow the same one-line pattern.
 
+        // How It Works screen: TAKE QUIZ stays disabled until Audio_HowItWorks finishes playing.
+        [Header("How It Works screen")]
+        public Button howItWorksQuizButton;
+
+        private Coroutine howItWorksRoutine;
         private AudioSource audioSource;
 
         private const string AudioMutePrefKey = "CircuitAR_AudioMuted";
@@ -117,6 +123,38 @@ namespace CircuitAR.AR
         // becomes visible (i.e. once the resistor is placed), since PlacementCallout.SetVisible
         // is a plain SetActive() and this project already relies on OnEnable for "sub-step shown."
         public void PlayConnectWireAudio() => PlayClip(audioConnectWire);
+
+        // Wired to the How It Works screen's ScreenAudioTrigger (no delay). TAKE QUIZ is disabled
+        // immediately, then re-enabled either when the clip finishes or right away if there's no
+        // clip assigned or audio is muted (so muting never permanently locks the button out).
+        public void PlayHowItWorksAudio()
+        {
+            if (howItWorksQuizButton != null) howItWorksQuizButton.interactable = false;
+            if (howItWorksRoutine != null) { StopCoroutine(howItWorksRoutine); howItWorksRoutine = null; }
+
+            if (audioHowItWorks == null || IsAudioMuted)
+            {
+                if (howItWorksQuizButton != null) howItWorksQuizButton.interactable = true;
+                return;
+            }
+            PlayClip(audioHowItWorks);
+            howItWorksRoutine = StartCoroutine(EnableQuizButtonAfter(audioHowItWorks.length));
+        }
+
+        private IEnumerator EnableQuizButtonAfter(float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            howItWorksRoutine = null;
+            if (howItWorksQuizButton != null) howItWorksQuizButton.interactable = true;
+        }
+
+        // Wired to the How It Works screen's ScreenAudioTrigger onHide — stops both the clip and
+        // the pending enable-timer if the student backs out before it finishes.
+        public void StopHowItWorksAudio()
+        {
+            StopAudio();
+            if (howItWorksRoutine != null) { StopCoroutine(howItWorksRoutine); howItWorksRoutine = null; }
+        }
 
         public void ResetDemo()
         {

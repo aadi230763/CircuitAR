@@ -1,3 +1,4 @@
+using CircuitAR.Audio;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -18,9 +19,15 @@ namespace CircuitAR.EditorUIBuilders
             StatusBar(s.root);
             Wire(IconButton(c, "Btn_Back", "‹", 16f, 54f), ScreenNames.Complete);
             IconButton(c, "Btn_Help", "?", 334f, 54f);
+            MuteButton(c, 284f, 54f);
             SessionPill(c, "LED CIRCUIT", 180f, new[] { Green, Green, Green, Green });
             TrackingPill(c);
             CircuitStatusPill(c, complete: true);
+
+            // Plays Audio_HowItWorks as soon as this screen appears (no delay — the clip's own
+            // length paces the wait, see TAKE QUIZ below). Wired to CircuitDemoController by
+            // Tools > CircuitAR > AR > 3 Wire Circuit Demo.
+            s.canvas.gameObject.AddComponent<ScreenAudioTrigger>();
 
             MultiLabelBox(c, "Pill_CurrentFlow", 36f, 146f,
                 new[]
@@ -79,6 +86,11 @@ namespace CircuitAR.EditorUIBuilders
             var quiz = PButton(p, "TAKE QUIZ  →");
             EndPanel(p);
             Wire(quiz, ScreenNames.Quiz);
+            // Starts disabled — CircuitDemoController re-enables it once Audio_HowItWorks finishes
+            // (or immediately if that clip isn't assigned, or audio is muted). Matches the
+            // step1Next/step2Next pattern elsewhere: this build-time value is just so the saved
+            // scene matches the runtime gate before Play.
+            quiz.interactable = false;
 
             HomeIndicator(s.root);
             EndScreen(s);
