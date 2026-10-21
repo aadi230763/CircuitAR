@@ -1,4 +1,6 @@
+using CircuitAR.AR;
 using CircuitAR.Audio;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using static CircuitAR.EditorUIBuilders.UIBuilderCommon;
@@ -37,15 +39,24 @@ namespace CircuitAR.EditorUIBuilders
             WorldLabel(c, "Label_FinalWireConnected", 176f, 436f, "✓ FINAL WIRE CONNECTED", Green, green, 10f, W.ExtraBold, 0.6f);
 
             var p = BeginPanel(c, "Panel_Instruction", 16f, 549f, 358f);
-            PStepChip(p, "✓ CIRCUIT COMPLETE", Green, Rgba(46, 213, 115, 0.18f));
-            PTitle(p, "THE LED IS ON");
-            PBody(p, "All required connections were detected. The loop is closed, so the LED switches on.");
+            var chip = PStepChip(p, "✓ CIRCUIT COMPLETE", Green, Rgba(46, 213, 115, 0.18f));
+            var title = PTitle(p, "THE LED IS ON");
+            var body = PBody(p, "All required connections were detected. The loop is closed, so the LED switches on.");
             PChecklist(p, new[] { "BATTERY", "RESISTOR", "LED", "RETURN PATH" }, new[] { true, true, true, true });
             PButtonRow(p, "RESET", "HOW IT WORKS  →", out var reset, out var how);
             EndPanel(p);
 
             Wire(reset, ScreenNames.Step1);
             Wire(how, ScreenNames.HowItWorks);
+
+            // Shared by all three circuit modes (LED/Series/Parallel) — each controller's
+            // CheckCircuit()/FinishCircuit() sets this text right before showing this screen, so
+            // whichever mode just finished shows the right copy. Wired by Tools > CircuitAR > AR >
+            // 3/4/5 (one of them assigns the component references; all three call SetText()).
+            var textOverride = s.canvas.gameObject.AddComponent<FinalStepCompleteTextOverride>();
+            textOverride.chipText = chip.GetComponentInChildren<TextMeshProUGUI>();
+            textOverride.titleText = title;
+            textOverride.bodyText = body;
 
             HomeIndicator(s.root);
             EndScreen(s);

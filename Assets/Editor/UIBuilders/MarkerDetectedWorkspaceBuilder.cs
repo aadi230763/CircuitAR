@@ -65,11 +65,12 @@ namespace CircuitAR.EditorUIBuilders
             p.y += hdr.rectTransform.sizeDelta.y + 10f;
 
             string[] names = { "LED", "SERIES", "PARALLEL" };
-            string[] steps = { "4 steps", "6 steps", "7 steps" };
+            string[] steps = { "4 steps", "4 steps", "4 steps" };
+            string[] targetScreens = { ScreenNames.Step1, ScreenNames.SeriesStep1, ScreenNames.ParallelStep1 };
             float cw = (PanelInnerW(p) - 16f) / 3f;
             for (int i = 0; i < 3; i++)
             {
-                bool sel = i == 0;
+                bool sel = i == 0; // LED starts as the pre-selected card, same as before
                 float cx = 17f + i * (cw + 8f);
                 var card = Box(p.rt, "Card_" + names[i], cx, p.y, cw, 100f, 14f,
                     sel ? Rgba(47, 140, 255, 0.20f) : White(0.05f),
@@ -81,15 +82,17 @@ namespace CircuitAR.EditorUIBuilders
                 Txt(card, steps[i], 13f, 74.4f, 10f, W.Regular, sel ? TextLightBlue : TextMuted, 0f, 0f, 0f,
                     TextAlignmentOptions.TopLeft, "Txt_Steps");
                 var btn = MakeButton(card);
+                Wire(btn, targetScreens[i]);
                 if (sel)
                 {
-                    Wire(btn, ScreenNames.Step1);
                     // Starts disabled — CircuitDemoController re-enables it once Audio_Workspace
                     // finishes (or immediately if unassigned/muted). Build-time value only, so the
-                    // saved scene matches the runtime gate before Play.
+                    // saved scene matches the runtime gate before Play. SERIES/PARALLEL aren't
+                    // gated by that same clip, so they're left interactable.
                     btn.interactable = false;
                 }
-                // TODO: Series / Parallel circuits aren't built yet.
+                // SelectLedMode/SelectSeriesMode/SelectParallelMode are added as a second onClick
+                // listener per card by Tools > CircuitAR > AR > 3/4/5 respectively.
             }
             p.y += 100f + 10f;
             EndPanel(p);

@@ -49,6 +49,7 @@ namespace CircuitAR.AR
         public ChecklistItemView ledChecklistItem;
         public ChecklistItemView returnPathChecklistItem;
         public UIScreenManager screenManager;
+        public FinalStepCompleteTextOverride completeTextOverride;
 
         // DECISION: audio lives on CircuitDemoController rather than a separate AudioManager —
         // it's already the persistent, always-present object every screen-driven event (marker
@@ -202,8 +203,12 @@ namespace CircuitAR.AR
 
         // Wired to the ImageTarget's DefaultObserverEventHandler.OnTargetFound / OnTargetLost
         // (alongside HandleMarkerFound/HandleMarkerLost below — both fire on the same events).
+        // Gated on CircuitModeState so this only shows the LED board when LED mode is the one
+        // selected on the Workspace screen — SeriesCircuitController / ParallelCircuitController
+        // do the equivalent for their own content and are gated the same way.
         public void ShowARContent()
         {
+            if (CircuitModeState.Active != CircuitMode.Led) return;
             if (hideArContentRoutine != null)
             {
                 StopCoroutine(hideArContentRoutine);
@@ -214,8 +219,33 @@ namespace CircuitAR.AR
 
         public void HideARContent()
         {
+            if (CircuitModeState.Active != CircuitMode.Led) return;
             if (hideArContentRoutine != null) StopCoroutine(hideArContentRoutine);
             hideArContentRoutine = StartCoroutine(HideARContentAfterDelay());
+        }
+
+        // Wired to the Workspace screen's LED card — resets the mode in case Series/Parallel was
+        // previously selected (e.g. the student backed out and picked LED this time). Switches the
+        // visible 3D content immediately instead of waiting for the next OnTargetFound (which won't
+        // fire again if the marker is already tracked from a previous mode).
+        public void SelectLedMode()
+        {
+            CircuitModeState.Active = CircuitMode.Led;
+            HideSiblingContent();
+            ResetDemo();
+            ShowARContent();
+        }
+
+        // ARContent / ARContent_Series / ARContent_Parallel are all direct siblings under
+        // ImageTarget (built by ARContentSceneBuilder) — deactivating everyone except our own root
+        // this way needs no cross-controller references and works regardless of wiring order.
+        private void HideSiblingContent()
+        {
+            if (arContentRoot == null) return;
+            var parent = arContentRoot.transform.parent;
+            if (parent == null) return;
+            foreach (Transform sibling in parent)
+                if (sibling.gameObject != arContentRoot) sibling.gameObject.SetActive(false);
         }
 
         private IEnumerator HideARContentAfterDelay()
@@ -314,11 +344,13 @@ namespace CircuitAR.AR
         public bool IsReturnPathOk => wire != null && wire.IsPlaced;
         public bool IsCircuitComplete => IsLedOk && IsResistorOk && IsReturnPathOk;
 
-        // Wired to the Final Step Incomplete screen's "CHECK CIRCUIT" button.
+        // Wired to the Final Step Incomplete screen's "CHECK CIRCUIT" button (only reachable via
+        // Back now that Step 2-3's NEXT skips straight to Complete — kept working regardless).
         public void CheckCircuit()
         {
             UpdateChecklist();
             if (!IsCircuitComplete) return;
+            ShowLedCompleteText();
 
             var mgr = screenManager != null ? screenManager : FindObjectOfType<UIScreenManager>();
             if (mgr == null)
@@ -335,6 +367,29 @@ namespace CircuitAR.AR
             if (resistorChecklistItem != null) resistorChecklistItem.SetOk(IsResistorOk);
             if (ledChecklistItem != null) ledChecklistItem.SetOk(IsLedOk);
             if (returnPathChecklistItem != null) returnPathChecklistItem.SetOk(IsReturnPathOk);
+        }
+
+        // Wired to the Step 2-3 screen's NEXT button, replacing the plain ShowScreen navigation it
+        // used to have — needed so the shared Complete screen's text gets reset to the LED copy
+        // even if Series or Parallel last overwrote it (e.g. the student tried another mode, then
+        // came back and finished the LED circuit).
+        public void FinishLedCircuit()
+        {
+            ShowLedCompleteText();
+            var mgr = screenManager != null ? screenManager : FindObjectOfType<UIScreenManager>();
+            if (mgr == null)
+            {
+                Debug.LogWarning("[CircuitAR] CircuitDemoController.FinishLedCircuit(): no UIScreenManager found.");
+                return;
+            }
+            mgr.ShowScreen(CompleteScreenName);
+        }
+
+        private void ShowLedCompleteText()
+        {
+            if (completeTextOverride != null)
+                completeTextOverride.SetText("✓ CIRCUIT COMPLETE", "THE LED IS ON",
+                    "All required connections were detected. The loop is closed, so the LED switches on.");
         }
     }
 }

@@ -46,15 +46,17 @@ namespace CircuitAR.EditorUIBuilders
             PStepChip(p, "STEP 3 OF 4", Accent, Rgba(47, 140, 255, 0.18f));
             PTitle(p, "CONNECT THE LED");
             PBody(p, "Tap PLACE RESISTOR, then tap DROP ON D14 to run the jumper wire from the resistor row (D11) to the LED’s + leg.");
-            PButtonRow(p, "RESET", "NEXT  →", out var reset, out var next);
+            PButtonRow(p, "RESET", "NEXT  →", out var reset, out _);
             EndPanel(p);
 
             Wire(reset, ScreenNames.Step1);
             // Skips the Final Step Incomplete / CHECK CIRCUIT screen entirely: this button only
             // enables once resistor + wire are placed, and Step 1's NEXT already requires the LED
             // to be placed before this screen is even reachable — so by the time this is tappable
-            // the circuit is guaranteed complete, and there's nothing left to "check."
-            Wire(next, ScreenNames.Complete);
+            // the circuit is guaranteed complete, and there's nothing left to "check." Wired to
+            // CircuitDemoController.FinishLedCircuit() (not a plain screen nav) by
+            // Tools > CircuitAR > AR > 3 Wire Circuit Demo, so the shared Complete screen's text
+            // resets to the LED copy even if Series/Parallel last overwrote it.
 
             HomeIndicator(s.root);
             EndScreen(s);

@@ -26,6 +26,13 @@ namespace CircuitAR.EditorUIBuilders
         public const string HowItWorks = "Canvas_HowItWorks";
         public const string Quiz = "Canvas_Quiz";
         public const string Result = "Canvas_Result";
+
+        public const string SeriesStep1 = "Canvas_SeriesStep1";
+        public const string SeriesStep2 = "Canvas_SeriesStep2";
+        public const string SeriesStep3 = "Canvas_SeriesStep3";
+        public const string ParallelStep1 = "Canvas_ParallelStep1";
+        public const string ParallelStep2 = "Canvas_ParallelStep2";
+        public const string ParallelStep3 = "Canvas_ParallelStep3";
     }
 
     /// One piece of content inside a pill / chip: either a text run or an icon.

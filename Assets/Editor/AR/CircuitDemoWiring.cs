@@ -97,6 +97,7 @@ namespace CircuitAR.EditorAR
             var workspaceAudio = workspaceRoot.GetComponent<ScreenAudioTrigger>();
 
             var circuitCompleteAudio = completeRoot.GetComponent<ScreenAudioTrigger>();
+            var completeTextOverride = completeRoot.GetComponent<FinalStepCompleteTextOverride>();
 
             const string incompletePanel = "UI_FinalStepIncompleteRoot/SafeArea/Panel_Instruction/";
             var checkButton = incompleteRoot.transform.Find(incompletePanel + "Btn_CHECKCIRCUIT")?.GetComponent<Button>();
@@ -110,7 +111,7 @@ namespace CircuitAR.EditorAR
                 detectionPill == null || ledCallout == null || step1Next == null || resistorCallout == null || wireCallout == null || step2Next == null ||
                 checkButton == null || batteryItem == null || resistorItem == null || ledItem == null || returnPathItem == null || screenManager == null ||
                 welcomeAudio == null || placeLedAudio == null || placeResistorAudio == null || connectWireAudio == null ||
-                ledCardButton == null || workspaceAudio == null || circuitCompleteAudio == null)
+                ledCardButton == null || workspaceAudio == null || circuitCompleteAudio == null || completeTextOverride == null)
             {
                 Debug.LogError("[CircuitAR] Wiring failed — missing piece(s): " +
                     $"LED={led != null}, Resistor={resistor != null}, Wire={wire != null}, " +
@@ -123,7 +124,7 @@ namespace CircuitAR.EditorAR
                     $"WelcomeAudio={welcomeAudio != null}, PlaceLedAudio={placeLedAudio != null}, " +
                     $"PlaceResistorAudio={placeResistorAudio != null}, ConnectWireAudio={connectWireAudio != null}, " +
                     $"LedCardButton={ledCardButton != null}, WorkspaceAudio={workspaceAudio != null}, " +
-                    $"CircuitCompleteAudio={circuitCompleteAudio != null}. " +
+                    $"CircuitCompleteAudio={circuitCompleteAudio != null}, CompleteTextOverride={completeTextOverride != null}. " +
                     "Re-run the build steps named in the dialogs for menu items 1/2 and Build UI 02/03/04/05/06A/06B, in order.");
                 return;
             }
@@ -149,6 +150,7 @@ namespace CircuitAR.EditorAR
             ctrl.screenManager = screenManager;
             ctrl.detectionPill = detectionPill;
             ctrl.workspaceLedCardButton = ledCardButton;
+            ctrl.completeTextOverride = completeTextOverride;
             EditorUtility.SetDirty(ctrl);
 
             WireCallout(ledCallout, ledAnchor, ctrl.PlaceLed);
@@ -162,15 +164,23 @@ namespace CircuitAR.EditorAR
             WireAudioTrigger(workspaceAudio, ctrl.PlayWorkspaceAudio, ctrl.StopWorkspaceAudio);
             WireAudioTrigger(circuitCompleteAudio, ctrl.PlayCircuitCompleteAudio, ctrl.StopAudio);
 
-            // NEXT/the LED card keep their existing ShowScreen listener from Build UI 03/04/05;
-            // the controller only toggles interactable. Start disabled so the saved scene matches
-            // the runtime gate. (TAKE QUIZ on screen 07 is no longer gated — it's left interactable.)
+            // Step 1's NEXT keeps its existing ShowScreen listener from Build UI 04; the controller
+            // only toggles interactable. Step 2-3's NEXT has no build-time listener any more — it's
+            // wired here to FinishLedCircuit() instead of a plain screen nav (see that builder's
+            // comment). The LED card keeps its existing ShowScreen listener too, plus a second
+            // listener added here to reset the active mode. Start disabled so the saved scene
+            // matches the runtime gate. (TAKE QUIZ on screen 07 is no longer gated — left interactable.)
             step1Next.interactable = false;
             step2Next.interactable = false;
             ledCardButton.interactable = false;
             EditorUtility.SetDirty(step1Next);
             EditorUtility.SetDirty(step2Next);
             EditorUtility.SetDirty(ledCardButton);
+
+            ClearPersistentListeners(step2Next.onClick);
+            UnityEventTools.AddPersistentListener(step2Next.onClick, ctrl.FinishLedCircuit);
+
+            UnityEventTools.AddPersistentListener(ledCardButton.onClick, ctrl.SelectLedMode);
 
             ClearPersistentListeners(checkButton.onClick);
             UnityEventTools.AddPersistentListener(checkButton.onClick, ctrl.CheckCircuit);
@@ -197,14 +207,12 @@ namespace CircuitAR.EditorAR
 
             EditorSceneManager.MarkSceneDirty(active);
             Selection.activeGameObject = ctrlGO;
-            Debug.Log("[CircuitAR] Circuit demo wired: real-detection pill + transition on screen 02, " +
-                       "ARContent show/hide on target found/lost, guided LED placement on screen 04, " +
-                       "resistor then wire on screen 05 — NEXT there now skips straight to screen 06B " +
-                       "(06A is bypassed in the normal flow, still reachable via Back), all audio triggers " +
-                       "wired (Welcome/PlaceLED/PlaceResistor/ConnectWire/Workspace/CircuitComplete), the LED " +
-                       "circuit card (03) stays disabled until its clip finishes, and TAKE QUIZ (07) is no " +
-                       "longer gated by audio (clips themselves still need dragging into CircuitDemoController). " +
-                       "Save the scene.");
+            Debug.Log("[CircuitAR] LED circuit wired: real-detection pill + transition on screen 02, " +
+                       "ARContent show/hide gated on CircuitMode.Led, guided placement on screens 04/05, " +
+                       "Step 2-3 NEXT now calls FinishLedCircuit() (sets the shared Complete screen's " +
+                       "text, skips 06A), all audio triggers wired, the LED circuit card (03) stays " +
+                       "disabled until its clip finishes and also resets the active mode. Run menu items " +
+                       "4 (Series) and 5 (Parallel) too if you haven't. Save the scene.");
         }
 
         private static void WireCallout(PlacementCallout callout, Transform anchor, UnityEngine.Events.UnityAction onTap)

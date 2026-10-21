@@ -32,6 +32,15 @@ namespace CircuitAR.EditorAR
 
         private static readonly Color WireColor = new Color(0.85f, 0.35f, 0.1f);
 
+        // Battery: no battery exists in the source asset, so this stays primitive-built (same
+        // approach the wire already uses). Proportioned like a real 9V: ~22mm x 35mm x 14mm.
+        private const float BatteryWidth = 0.022f;
+        private const float BatteryHeight = 0.035f;
+        private const float BatteryDepth = 0.014f;
+        private static readonly Color BatteryBodyColor = new Color(0.08f, 0.07f, 0.07f);
+        private static readonly Color BatteryCapColor = new Color(0.65f, 0.63f, 0.6f);
+        private static readonly Color BatteryTerminalColor = new Color(0.75f, 0.73f, 0.65f);
+
         [MenuItem("Tools/CircuitAR/AR/1 Build Component Prefabs")]
         public static void Build()
         {
@@ -48,7 +57,8 @@ namespace CircuitAR.EditorAR
             BuildBreadboardPrefab(glbAsset);
             BuildLedPrefab(glbAsset);
             BuildResistorPrefab(glbAsset);
-            BuildWirePrefab(CreateWireMaterial());
+            BuildWirePrefab(CreateSimpleMaterial("Mat_Wire", WireColor));
+            BuildBatteryPrefab();
 
             AssetDatabase.SaveAssets();
             Debug.Log("[CircuitAR] Component prefabs built from " + SourceAssetPath + " into " + PrefabDir +
@@ -152,6 +162,53 @@ namespace CircuitAR.EditorAR
             SaveAndDestroy(root, "Wire");
         }
 
+        // Simple primitive 9V-style battery (Series/Parallel circuits): a dark body, a lighter cap,
+        // and two small terminal nubs. Root origin at the base, matching every other component.
+        private static void BuildBatteryPrefab()
+        {
+            var root = new GameObject("Battery");
+            var bodyMat = CreateSimpleMaterial("Mat_BatteryBody", BatteryBodyColor);
+            var capMat = CreateSimpleMaterial("Mat_BatteryCap", BatteryCapColor);
+            var terminalMat = CreateSimpleMaterial("Mat_BatteryTerminal", BatteryTerminalColor);
+
+            float capHeight = BatteryHeight * 0.15f;
+            float bodyHeight = BatteryHeight - capHeight;
+
+            var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            body.name = "Body";
+            body.transform.SetParent(root.transform, false);
+            body.transform.localPosition = new Vector3(0f, bodyHeight / 2f, 0f);
+            body.transform.localScale = new Vector3(BatteryWidth, bodyHeight, BatteryDepth);
+            body.GetComponent<Renderer>().sharedMaterial = bodyMat;
+            Object.DestroyImmediate(body.GetComponent<Collider>());
+
+            var cap = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cap.name = "Cap";
+            cap.transform.SetParent(root.transform, false);
+            cap.transform.localPosition = new Vector3(0f, bodyHeight + capHeight / 2f, 0f);
+            cap.transform.localScale = new Vector3(BatteryWidth * 0.9f, capHeight, BatteryDepth * 0.9f);
+            cap.GetComponent<Renderer>().sharedMaterial = capMat;
+            Object.DestroyImmediate(cap.GetComponent<Collider>());
+
+            float terminalD = BatteryWidth * 0.18f;
+            float terminalH = capHeight * 0.6f;
+            AddTerminal(root.transform, "Terminal_Positive", -BatteryWidth * 0.22f, BatteryHeight, terminalD, terminalH, terminalMat);
+            AddTerminal(root.transform, "Terminal_Negative", BatteryWidth * 0.22f, BatteryHeight, terminalD, terminalH, terminalMat);
+
+            SaveAndDestroy(root, "Battery");
+        }
+
+        private static void AddTerminal(Transform parent, string name, float xOffset, float baseY, float diameter, float height, Material mat)
+        {
+            var t = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            t.name = name;
+            t.transform.SetParent(parent, false);
+            t.transform.localPosition = new Vector3(xOffset, baseY + height / 2f, 0f);
+            t.transform.localScale = new Vector3(diameter, height / 2f, diameter); // cylinder default height = 2
+            t.GetComponent<Renderer>().sharedMaterial = mat;
+            Object.DestroyImmediate(t.GetComponent<Collider>());
+        }
+
         // ------------------------------------------------------------------
         // Helpers
         // ------------------------------------------------------------------
@@ -225,9 +282,9 @@ namespace CircuitAR.EditorAR
             Object.DestroyImmediate(root);
         }
 
-        private static Material CreateWireMaterial()
+        private static Material CreateSimpleMaterial(string name, Color color)
         {
-            const string path = GenDir + "Mat_Wire.mat";
+            string path = GenDir + name + ".mat";
             var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (mat == null)
             {
@@ -235,7 +292,7 @@ namespace CircuitAR.EditorAR
                 mat = new Material(shader);
                 AssetDatabase.CreateAsset(mat, path);
             }
-            mat.color = WireColor;
+            mat.color = color;
             EditorUtility.SetDirty(mat);
             return mat;
         }

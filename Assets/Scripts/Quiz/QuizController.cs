@@ -1,18 +1,30 @@
+using CircuitAR.AR;
 using UnityEngine;
 
 namespace CircuitAR.UI
 {
-    // Orchestrates the 3 question groups built by QuizBuilder: shows one at a time, resets the
-    // whole quiz whenever Canvas_Quiz becomes active, and hands the final score off to
-    // QuizScoreStore before navigating to the Result screen.
+    // Orchestrates all 3 modes' question sets (9 groups total, built by QuizBuilder under one
+    // Canvas_Quiz): picks whichever set matches CircuitModeState.Active, shows one group of that
+    // set at a time, resets the whole quiz whenever Canvas_Quiz becomes active, and hands the
+    // final score off to QuizScoreStore before navigating to the Result screen.
     public class QuizController : MonoBehaviour
     {
         private const string ResultScreenName = "Canvas_Result"; // must match ScreenNames.Result
 
-        public GameObject[] questionGroups;
-        public QuizQuestionView[] questionViews;
+        [System.Serializable]
+        public class QuestionSet
+        {
+            public GameObject[] questionGroups;
+            public QuizQuestionView[] questionViews;
+        }
+
+        public QuestionSet ledQuestions;
+        public QuestionSet seriesQuestions;
+        public QuestionSet parallelQuestions;
         public QuizProgressPill progressPill;
         public UIScreenManager screenManager;
+
+        private QuestionSet active;
 
         private void OnEnable()
         {
@@ -21,24 +33,48 @@ namespace CircuitAR.UI
 
         public void ResetQuiz()
         {
-            foreach (var v in questionViews)
+            active = CircuitModeState.Active switch
+            {
+                CircuitMode.Series => seriesQuestions,
+                CircuitMode.Parallel => parallelQuestions,
+                _ => ledQuestions,
+            };
+
+            // Hide every group of every set first, so switching modes never leaves a stale
+            // question from a previous mode visible underneath the active set.
+            HideAll(ledQuestions);
+            HideAll(seriesQuestions);
+            HideAll(parallelQuestions);
+
+            if (active?.questionViews == null) return;
+            foreach (var v in active.questionViews)
                 if (v != null) v.ResetState();
             ShowGroup(0);
+        }
+
+        private static void HideAll(QuestionSet set)
+        {
+            if (set?.questionGroups == null) return;
+            foreach (var g in set.questionGroups)
+                if (g != null) g.SetActive(false);
         }
 
         // Wired to each question's own NEXT button (for questions before the last one).
         public void ShowGroup(int index)
         {
-            for (int i = 0; i < questionGroups.Length; i++)
-                if (questionGroups[i] != null) questionGroups[i].SetActive(i == index);
-            if (progressPill != null) progressPill.SetProgress(index, questionGroups.Length);
+            if (active?.questionGroups == null) return;
+            for (int i = 0; i < active.questionGroups.Length; i++)
+                if (active.questionGroups[i] != null) active.questionGroups[i].SetActive(i == index);
+            if (progressPill != null) progressPill.SetProgress(index, active.questionGroups.Length);
         }
 
         // Wired to the last question's SEE RESULTS button.
         public void FinishQuiz()
         {
+            if (active?.questionViews == null) return;
+
             QuizScoreStore.Reset();
-            foreach (var v in questionViews)
+            foreach (var v in active.questionViews)
             {
                 if (v == null) continue;
                 if (v.Answered && v.WasCorrect) QuizScoreStore.CorrectCount++;
@@ -48,7 +84,7 @@ namespace CircuitAR.UI
                     CorrectAnswerLabel = v.correctAnswerLabel
                 });
             }
-            QuizScoreStore.TotalQuestions = questionViews.Length;
+            QuizScoreStore.TotalQuestions = active.questionViews.Length;
             QuizScoreStore.HasResult = true;
 
             if (screenManager == null)

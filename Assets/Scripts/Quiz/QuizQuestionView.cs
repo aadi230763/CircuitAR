@@ -39,6 +39,7 @@ namespace CircuitAR.UI
         public Image feedbackStroke;
         public TextMeshProUGUI feedbackText;
         public GameObject nextButtonObject;
+        public QuizSfx sfx;
 
         public bool Answered { get; private set; }
         public bool WasCorrect { get; private set; }
@@ -64,6 +65,12 @@ namespace CircuitAR.UI
             if (Answered) return;
             Answered = true;
             WasCorrect = index == correctIndex;
+
+            if (sfx != null)
+            {
+                if (WasCorrect) sfx.PlayCorrect();
+                else sfx.PlayWrong();
+            }
 
             for (int i = 0; i < options.Length; i++)
             {

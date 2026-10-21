@@ -9,10 +9,11 @@ using static CircuitAR.EditorUIBuilders.UIStyleConstants;
 
 namespace CircuitAR.EditorUIBuilders
 {
-    // Figma: "08A — Quiz". 3 real questions, each a self-contained group (progress label,
-    // question, 4 options, feedback box, its own NEXT/SEE RESULTS button) built at the same
-    // Figma coordinates and toggled one at a time by QuizController — same "static content,
-    // runtime show/hide" pattern as the Step 1 / Step 2-3 placement callouts.
+    // Figma: "08A — Quiz". Builds all 3 circuit modes' question sets (LED/Series/Parallel, 3
+    // questions each = 9 groups total) under one Canvas_Quiz — QuizController shows only the set
+    // matching CircuitModeState.Active. Each group is a self-contained progress label/question/4
+    // options/feedback box/own NEXT button, same "static content, runtime show/hide" pattern as
+    // the Step 1 / Step 2-3 placement callouts.
     public static class QuizBuilder
     {
         private static readonly string[] Letters = { "A", "B", "C", "D" };
@@ -37,17 +38,44 @@ namespace CircuitAR.EditorUIBuilders
                 progressPillRt.Find("Seg_3")?.GetComponent<Image>(),
             };
 
-            var q1 = BuildQuestionGroup(c, 0, 3,
+            var sfx = s.canvas.gameObject.AddComponent<QuizSfx>();
+
+            var ledSet = BuildLedQuestions(c, sfx);
+            var seriesSet = BuildSeriesQuestions(c, sfx);
+            var parallelSet = BuildParallelQuestions(c, sfx);
+
+            // LinkSet (called while building each set above) already created this via
+            // FindOrAddController so the NEXT buttons had something to wire to — reuse it here.
+            var controller = s.canvas.gameObject.GetComponent<QuizController>();
+            if (controller == null) controller = s.canvas.gameObject.AddComponent<QuizController>();
+            controller.ledQuestions = ledSet;
+            controller.seriesQuestions = seriesSet;
+            controller.parallelQuestions = parallelSet;
+            controller.progressPill = progressPill;
+            controller.screenManager = EnsureScreenManager();
+            EditorUtility.SetDirty(controller);
+
+            HomeIndicator(s.root);
+            EndScreen(s);
+        }
+
+        // ------------------------------------------------------------------
+        // LED Circuit quiz — unchanged content from before this feature.
+        // ------------------------------------------------------------------
+
+        private static QuizController.QuestionSet BuildLedQuestions(Transform parent, QuizSfx sfx)
+        {
+            var q1 = BuildQuestionGroup(parent, "LED", 0, 3, sfx,
                 "How can you visually identify the anode (positive terminal) of a standard through-hole LED?",
                 new[] { "The flat edge on the plastic body.", "The longer wire lead.", "The thicker wire lead.", "The colored/tinted epoxy lens." },
                 correctIndex: 1);
 
-            var q2 = BuildQuestionGroup(c, 1, 3,
+            var q2 = BuildQuestionGroup(parent, "LED", 1, 3, sfx,
                 "What is the typical forward voltage drop (Vf) for a standard bright red LED operating at regular current?",
                 new[] { "0.5V", "5.0V", "2.0V", "12.0V" },
                 correctIndex: 2);
 
-            var q3 = BuildQuestionGroup(c, 2, 3,
+            var q3 = BuildQuestionGroup(parent, "LED", 2, 3, sfx,
                 "You want to power a red LED (forward voltage drop of 2.0V) with a 9V battery. The LED requires 20mA (0.02A) of current. What value of series current-limiting resistor do you need?",
                 new[] { "350 ohms", "180 ohms", "450 ohms", "220 ohms" },
                 correctIndex: 0,
@@ -59,21 +87,60 @@ namespace CircuitAR.EditorUIBuilders
                     "Incorrect. 220 ohms is a common standard value, but it results in a higher current than the specified 20mA for a 9V supply and 2V drop.",
                 });
 
-            var controller = s.canvas.gameObject.AddComponent<QuizController>();
-            controller.questionGroups = new[] { q1.root.gameObject, q2.root.gameObject, q3.root.gameObject };
-            controller.questionViews = new[] { q1.view, q2.view, q3.view };
-            controller.progressPill = progressPill;
-            controller.screenManager = EnsureScreenManager();
-
-            UnityEventTools.AddIntPersistentListener(q1.nextButton.onClick, controller.ShowGroup, 1);
-            UnityEventTools.AddIntPersistentListener(q2.nextButton.onClick, controller.ShowGroup, 2);
-            UnityEventTools.AddPersistentListener(q3.nextButton.onClick, controller.FinishQuiz);
-
-            EditorUtility.SetDirty(controller);
-
-            HomeIndicator(s.root);
-            EndScreen(s);
+            return LinkSet(parent, q1, q2, q3);
         }
+
+        // ------------------------------------------------------------------
+        // Series Circuit quiz
+        // ------------------------------------------------------------------
+
+        private static QuizController.QuestionSet BuildSeriesQuestions(Transform parent, QuizSfx sfx)
+        {
+            var q1 = BuildQuestionGroup(parent, "Series", 0, 3, sfx,
+                "How are components connected in a series circuit?",
+                new[] { "In separate branches", "One after another in a single path", "Without any wires", "Directly across the battery" },
+                correctIndex: 1);
+
+            var q2 = BuildQuestionGroup(parent, "Series", 1, 3, sfx,
+                "What happens if one LED breaks in a series circuit?",
+                new[] { "All components continue working", "The battery stops working", "The circuit breaks, and all LEDs turn off", "The LEDs become brighter" },
+                correctIndex: 2);
+
+            var q3 = BuildQuestionGroup(parent, "Series", 2, 3, sfx,
+                "How many paths does current have in a series circuit?",
+                new[] { "One", "Two", "Three", "Four" },
+                correctIndex: 0);
+
+            return LinkSet(parent, q1, q2, q3);
+        }
+
+        // ------------------------------------------------------------------
+        // Parallel Circuit quiz
+        // ------------------------------------------------------------------
+
+        private static QuizController.QuestionSet BuildParallelQuestions(Transform parent, QuizSfx sfx)
+        {
+            var q1 = BuildQuestionGroup(parent, "Parallel", 0, 3, sfx,
+                "How are components connected in a parallel circuit?",
+                new[] { "In a single path", "Without a battery", "In separate branches", "Without resistors" },
+                correctIndex: 2);
+
+            var q2 = BuildQuestionGroup(parent, "Parallel", 1, 3, sfx,
+                "What happens if one LED breaks in a parallel circuit?",
+                new[] { "All LEDs turn off", "The other LED can continue working", "The battery stops working", "All resistors stop working" },
+                correctIndex: 1);
+
+            var q3 = BuildQuestionGroup(parent, "Parallel", 2, 3, sfx,
+                "In a parallel circuit, how does the voltage across each branch compare with the supply voltage?",
+                new[] { "It is always zero", "It is always half", "It is always double", "It is equal to the supply voltage" },
+                correctIndex: 3);
+
+            return LinkSet(parent, q1, q2, q3);
+        }
+
+        // ------------------------------------------------------------------
+        // Shared group-building
+        // ------------------------------------------------------------------
 
         private struct QuestionGroupResult
         {
@@ -82,18 +149,44 @@ namespace CircuitAR.EditorUIBuilders
             public Button nextButton;
         }
 
-        private static QuestionGroupResult BuildQuestionGroup(Transform parent, int index, int total,
+        // Wires each set's own 3 NEXT buttons to ShowGroup(0/1/2) / FinishQuiz() — these indices
+        // are relative to whichever set QuizController.ResetQuiz() makes active, so the same
+        // 0/1/2 wiring is correct for all three sets independently.
+        private static QuizController.QuestionSet LinkSet(Transform parent, QuestionGroupResult q1, QuestionGroupResult q2, QuestionGroupResult q3)
+        {
+            UnityEventTools.AddIntPersistentListener(q1.nextButton.onClick, FindOrAddController(parent).ShowGroup, 1);
+            UnityEventTools.AddIntPersistentListener(q2.nextButton.onClick, FindOrAddController(parent).ShowGroup, 2);
+            UnityEventTools.AddPersistentListener(q3.nextButton.onClick, FindOrAddController(parent).FinishQuiz);
+
+            return new QuizController.QuestionSet
+            {
+                questionGroups = new[] { q1.root.gameObject, q2.root.gameObject, q3.root.gameObject },
+                questionViews = new[] { q1.view, q2.view, q3.view },
+            };
+        }
+
+        // QuizController is added to the canvas AFTER the 3 sets are built (it needs their
+        // results), but the NEXT buttons need to be wired to it as each set is built — so find (or
+        // create) the one controller instance on the canvas root up front and reuse it.
+        private static QuizController FindOrAddController(Transform content)
+        {
+            var canvasGO = content.GetComponentInParent<Canvas>().gameObject;
+            var ctrl = canvasGO.GetComponent<QuizController>();
+            if (ctrl == null) ctrl = canvasGO.AddComponent<QuizController>();
+            return ctrl;
+        }
+
+        private static QuestionGroupResult BuildQuestionGroup(Transform parent, string namePrefix, int index, int total, QuizSfx sfx,
             string question, string[] optionTexts, int correctIndex, string[] explicitFeedback = null)
         {
             string[] feedback = explicitFeedback ?? GenericFeedback(optionTexts, correctIndex);
             string nextLabel = index == total - 1 ? "SEE RESULTS  →" : "NEXT  →";
 
-            var group = NewRect("Group_Q" + (index + 1), parent);
+            var group = NewRect(namePrefix + "_Group_Q" + (index + 1), parent);
             Fill(group);
 
             // 256/278 match the plate art's (Plate_08A_Quiz.png) original question position — the
-            // resistor illustration baked into that background sits just above this, so moving
-            // these up (as an earlier version of this screen did) overlaps it.
+            // resistor illustration baked into that background sits just above this.
             Txt(group, $"QUESTION {index + 1} OF {total}", 24f, 256f, 12f, W.ExtraBold, Accent, 1.44f, 0f, 0f,
                 TextAlignmentOptions.TopLeft, "Txt_QuestionLabel");
             var questionTxt = Txt(group, question, 24f, 278f, 20f, W.ExtraBold, White(1f), 0f, 342f, 26f,
@@ -106,6 +199,7 @@ namespace CircuitAR.EditorUIBuilders
             view.questionText = question;
             view.correctAnswerLabel = $"{Letters[correctIndex]}. {optionTexts[correctIndex]}";
             view.options = new QuizQuestionView.OptionRef[optionTexts.Length];
+            view.sfx = sfx;
 
             for (int i = 0; i < optionTexts.Length; i++)
             {
@@ -153,12 +247,12 @@ namespace CircuitAR.EditorUIBuilders
             view.feedbackText = feedbackText;
             view.nextButtonObject = nextButton.gameObject;
 
-            group.gameObject.SetActive(false); // QuizController.ResetQuiz() shows only the first group
+            group.gameObject.SetActive(false); // QuizController.ResetQuiz() shows only the active set's first group
             return new QuestionGroupResult { root = group, view = view, nextButton = nextButton };
         }
 
-        // "Correct!" / "Incorrect. The right answer is X — <text>." — used for Q1/Q2, which didn't
-        // come with per-option explanations (kept brief per the brief).
+        // "Correct!" / "Incorrect. The right answer is X — <text>." — used for questions that
+        // didn't come with per-option explanations (kept brief per the brief).
         private static string[] GenericFeedback(string[] optionTexts, int correctIndex)
         {
             var result = new string[optionTexts.Length];
