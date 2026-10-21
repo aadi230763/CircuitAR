@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace CircuitAR.EditorAR
 {
-    // Phase 4 helper: instantiates the placeholder prefabs (Tools > CircuitAR > AR > 1) under
+    // Instantiates the component prefabs (Tools > CircuitAR > AR > 1) under
     // ImageTarget/ARContent in SampleScene, sized against the real marker card (0.21m wide,
     // from the ImageTargetBehaviour already configured in Phase 3). Safe to re-run — rebuilds
     // only the "ARContent" subtree each time.
@@ -40,8 +40,8 @@ namespace CircuitAR.EditorAR
             var wirePrefab = LoadPrefab("Wire");
             if (breadboardPrefab == null || ledPrefab == null || resistorPrefab == null || wirePrefab == null)
             {
-                EditorUtility.DisplayDialog("Placeholder prefabs missing",
-                    "Run Tools > CircuitAR > AR > 1 Build Placeholder Prefabs first.", "OK");
+                EditorUtility.DisplayDialog("Component prefabs missing",
+                    "Run Tools > CircuitAR > AR > 1 Build Component Prefabs first.", "OK");
                 return;
             }
 
