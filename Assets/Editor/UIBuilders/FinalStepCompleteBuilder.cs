@@ -1,3 +1,4 @@
+using CircuitAR.Audio;
 using UnityEditor;
 using UnityEngine;
 using static CircuitAR.EditorUIBuilders.UIBuilderCommon;
@@ -17,9 +18,14 @@ namespace CircuitAR.EditorUIBuilders
             StatusBar(s.root);
             Wire(IconButton(c, "Btn_Back", "‹", 16f, 54f), ScreenNames.Incomplete);
             IconButton(c, "Btn_Help", "?", 334f, 54f);
+            MuteButton(c, 284f, 54f);
             SessionPill(c, "LED CIRCUIT", 180f, new[] { Green, Green, Green, Green });
             TrackingPill(c);
             CircuitStatusPill(c, complete: true);
+
+            // Plays Audio_CircuitComplete as soon as this screen appears (no delay). Wired to
+            // CircuitDemoController by Tools > CircuitAR > AR > 3 Wire Circuit Demo.
+            s.canvas.gameObject.AddComponent<ScreenAudioTrigger>();
 
             var red = new Color(Red.r, Red.g, Red.b, 0.75f);
             var green = new Color(Green.r, Green.g, Green.b, 0.75f);

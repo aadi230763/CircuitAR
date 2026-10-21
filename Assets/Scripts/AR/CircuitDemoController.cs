@@ -58,19 +58,18 @@ namespace CircuitAR.AR
         public AudioClip audioPlaceLed;
         public AudioClip audioPlaceResistor;
         public AudioClip audioConnectWire;
-        public AudioClip audioHowItWorks;
         public AudioClip audioWorkspace;
+        public AudioClip audioCircuitComplete;
         // Add further Audio_* fields here (e.g. quiz questions later) — PlayClip/PlayNamed*
         // methods below follow the same one-line pattern.
 
         // "Proceed" buttons that stay disabled until their screen's clip finishes playing.
         [Header("Gated buttons")]
-        public Button howItWorksQuizButton;
         public Button workspaceLedCardButton;
 
         // Keyed by the gated button, so PlayGatedAudio/StopGatedAudio can share one
-        // implementation across every screen that uses this pattern (How It Works, Workspace, ...)
-        // instead of duplicating a disable → play → wait clip.length → enable routine per screen.
+        // implementation across every screen that uses this pattern (currently just Workspace —
+        // kept generic in case another gated button is added later).
         private readonly Dictionary<Button, Coroutine> gatedButtonRoutines = new Dictionary<Button, Coroutine>();
         private AudioSource audioSource;
 
@@ -130,6 +129,9 @@ namespace CircuitAR.AR
         // is a plain SetActive() and this project already relies on OnEnable for "sub-step shown."
         public void PlayConnectWireAudio() => PlayClip(audioConnectWire);
 
+        // Wired to the Final Step Complete ("THE LED IS ON") screen's ScreenAudioTrigger (no delay).
+        public void PlayCircuitCompleteAudio() => PlayClip(audioCircuitComplete);
+
         // Disables `gatedButton`, plays `clip`, and re-enables it once the clip finishes — or
         // immediately if the clip isn't assigned or audio is muted, so muting can never
         // permanently lock a button out. Shared by every screen with a "wait for the narration,
@@ -168,10 +170,6 @@ namespace CircuitAR.AR
                 gatedButtonRoutines.Remove(gatedButton);
             }
         }
-
-        // Wired to the How It Works screen's ScreenAudioTrigger (no delay).
-        public void PlayHowItWorksAudio() => PlayGatedAudio(audioHowItWorks, howItWorksQuizButton);
-        public void StopHowItWorksAudio() => StopGatedAudio(howItWorksQuizButton);
 
         // Wired to the Workspace screen's ScreenAudioTrigger (no delay) — gates the selected
         // (LED) circuit card until Audio_Workspace finishes.

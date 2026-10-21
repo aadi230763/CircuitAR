@@ -65,13 +65,13 @@ namespace CircuitAR.EditorAR
             var step1Root = FindRoot(active, ScreenNames.Step1);
             var step2Root = FindRoot(active, ScreenNames.Step2);
             var incompleteRoot = FindRoot(active, ScreenNames.Incomplete);
-            var howItWorksRoot = FindRoot(active, ScreenNames.HowItWorks);
+            var completeRoot = FindRoot(active, ScreenNames.Complete);
             if (arCameraRoot == null || workspaceRoot == null || step1Root == null || step2Root == null ||
-                incompleteRoot == null || howItWorksRoot == null)
+                incompleteRoot == null || completeRoot == null)
             {
                 EditorUtility.DisplayDialog("Step UI not found",
                     "Run Tools > Build UI > 02 AR Camera, 03 Marker Detected Workspace, 04 Step 1 Place LED, " +
-                    "05 Step 2-3 Resistor Wire, 06A Final Step Incomplete, and 07 How It Works first.", "OK");
+                    "05 Step 2-3 Resistor Wire, 06A Final Step Incomplete, and 06B Final Step Complete first.", "OK");
                 return;
             }
 
@@ -93,12 +93,10 @@ namespace CircuitAR.EditorAR
             var placeResistorAudio = step2Root.GetComponent<ScreenAudioTrigger>();
             var connectWireAudio = step2Root.transform.Find(step2 + "Callout_ConnectWire")?.GetComponent<ScreenAudioTrigger>();
 
-            const string howItWorksPanel = "UI_HowItWorksRoot/SafeArea/Panel_Explanation/";
-            var quizButton = howItWorksRoot.transform.Find(howItWorksPanel + "Btn_TAKEQUIZ")?.GetComponent<Button>();
-            var howItWorksAudio = howItWorksRoot.GetComponent<ScreenAudioTrigger>();
-
             var ledCardButton = workspaceRoot.transform.Find("UI_MarkerDetectedWorkspaceRoot/SafeArea/Panel_SelectCircuit/Card_LED")?.GetComponent<Button>();
             var workspaceAudio = workspaceRoot.GetComponent<ScreenAudioTrigger>();
+
+            var circuitCompleteAudio = completeRoot.GetComponent<ScreenAudioTrigger>();
 
             const string incompletePanel = "UI_FinalStepIncompleteRoot/SafeArea/Panel_Instruction/";
             var checkButton = incompleteRoot.transform.Find(incompletePanel + "Btn_CHECKCIRCUIT")?.GetComponent<Button>();
@@ -112,7 +110,7 @@ namespace CircuitAR.EditorAR
                 detectionPill == null || ledCallout == null || step1Next == null || resistorCallout == null || wireCallout == null || step2Next == null ||
                 checkButton == null || batteryItem == null || resistorItem == null || ledItem == null || returnPathItem == null || screenManager == null ||
                 welcomeAudio == null || placeLedAudio == null || placeResistorAudio == null || connectWireAudio == null ||
-                quizButton == null || howItWorksAudio == null || ledCardButton == null || workspaceAudio == null)
+                ledCardButton == null || workspaceAudio == null || circuitCompleteAudio == null)
             {
                 Debug.LogError("[CircuitAR] Wiring failed — missing piece(s): " +
                     $"LED={led != null}, Resistor={resistor != null}, Wire={wire != null}, " +
@@ -124,9 +122,9 @@ namespace CircuitAR.EditorAR
                     $"LEDChip={ledItem != null}, ReturnPathChip={returnPathItem != null}, ScreenManager={screenManager != null}, " +
                     $"WelcomeAudio={welcomeAudio != null}, PlaceLedAudio={placeLedAudio != null}, " +
                     $"PlaceResistorAudio={placeResistorAudio != null}, ConnectWireAudio={connectWireAudio != null}, " +
-                    $"QuizButton={quizButton != null}, HowItWorksAudio={howItWorksAudio != null}, " +
-                    $"LedCardButton={ledCardButton != null}, WorkspaceAudio={workspaceAudio != null}. " +
-                    "Re-run the build steps named in the dialogs for menu items 1/2 and Build UI 02/03/04/05/06A/07, in order.");
+                    $"LedCardButton={ledCardButton != null}, WorkspaceAudio={workspaceAudio != null}, " +
+                    $"CircuitCompleteAudio={circuitCompleteAudio != null}. " +
+                    "Re-run the build steps named in the dialogs for menu items 1/2 and Build UI 02/03/04/05/06A/06B, in order.");
                 return;
             }
 
@@ -150,7 +148,6 @@ namespace CircuitAR.EditorAR
             ctrl.returnPathChecklistItem = returnPathItem;
             ctrl.screenManager = screenManager;
             ctrl.detectionPill = detectionPill;
-            ctrl.howItWorksQuizButton = quizButton;
             ctrl.workspaceLedCardButton = ledCardButton;
             EditorUtility.SetDirty(ctrl);
 
@@ -162,19 +159,17 @@ namespace CircuitAR.EditorAR
             WireAudioTrigger(placeLedAudio, ctrl.PlayPlaceLedAudio, ctrl.StopAudio);
             WireAudioTrigger(placeResistorAudio, ctrl.PlayPlaceResistorAudio, ctrl.StopAudio);
             WireAudioTrigger(connectWireAudio, ctrl.PlayConnectWireAudio, ctrl.StopAudio);
-            WireAudioTrigger(howItWorksAudio, ctrl.PlayHowItWorksAudio, ctrl.StopHowItWorksAudio);
             WireAudioTrigger(workspaceAudio, ctrl.PlayWorkspaceAudio, ctrl.StopWorkspaceAudio);
+            WireAudioTrigger(circuitCompleteAudio, ctrl.PlayCircuitCompleteAudio, ctrl.StopAudio);
 
-            // NEXT/TAKE QUIZ/the LED card keep their existing ShowScreen listener from
-            // Build UI 03/04/05/07; the controller only toggles interactable. Start disabled so
-            // the saved scene matches the runtime gate.
+            // NEXT/the LED card keep their existing ShowScreen listener from Build UI 03/04/05;
+            // the controller only toggles interactable. Start disabled so the saved scene matches
+            // the runtime gate. (TAKE QUIZ on screen 07 is no longer gated — it's left interactable.)
             step1Next.interactable = false;
             step2Next.interactable = false;
-            quizButton.interactable = false;
             ledCardButton.interactable = false;
             EditorUtility.SetDirty(step1Next);
             EditorUtility.SetDirty(step2Next);
-            EditorUtility.SetDirty(quizButton);
             EditorUtility.SetDirty(ledCardButton);
 
             ClearPersistentListeners(checkButton.onClick);
@@ -204,11 +199,12 @@ namespace CircuitAR.EditorAR
             Selection.activeGameObject = ctrlGO;
             Debug.Log("[CircuitAR] Circuit demo wired: real-detection pill + transition on screen 02, " +
                        "ARContent show/hide on target found/lost, guided LED placement on screen 04, " +
-                       "resistor then wire on screen 05 (NEXT gated on each), CHECK CIRCUIT on screen 06A " +
-                       "reads actual placement state, all audio triggers wired (Welcome/PlaceLED/PlaceResistor/" +
-                       "ConnectWire/HowItWorks/Workspace), and TAKE QUIZ (07) / the LED circuit card (03) stay " +
-                       "disabled until their clip finishes (clips themselves still need dragging into " +
-                       "CircuitDemoController). Save the scene.");
+                       "resistor then wire on screen 05 — NEXT there now skips straight to screen 06B " +
+                       "(06A is bypassed in the normal flow, still reachable via Back), all audio triggers " +
+                       "wired (Welcome/PlaceLED/PlaceResistor/ConnectWire/Workspace/CircuitComplete), the LED " +
+                       "circuit card (03) stays disabled until its clip finishes, and TAKE QUIZ (07) is no " +
+                       "longer gated by audio (clips themselves still need dragging into CircuitDemoController). " +
+                       "Save the scene.");
         }
 
         private static void WireCallout(PlacementCallout callout, Transform anchor, UnityEngine.Events.UnityAction onTap)

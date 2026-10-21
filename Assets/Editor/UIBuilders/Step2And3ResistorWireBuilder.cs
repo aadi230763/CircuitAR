@@ -50,7 +50,11 @@ namespace CircuitAR.EditorUIBuilders
             EndPanel(p);
 
             Wire(reset, ScreenNames.Step1);
-            Wire(next, ScreenNames.Incomplete);
+            // Skips the Final Step Incomplete / CHECK CIRCUIT screen entirely: this button only
+            // enables once resistor + wire are placed, and Step 1's NEXT already requires the LED
+            // to be placed before this screen is even reachable — so by the time this is tappable
+            // the circuit is guaranteed complete, and there's nothing left to "check."
+            Wire(next, ScreenNames.Complete);
 
             HomeIndicator(s.root);
             EndScreen(s);
