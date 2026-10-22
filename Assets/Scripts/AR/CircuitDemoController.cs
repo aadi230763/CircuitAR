@@ -31,6 +31,7 @@ namespace CircuitAR.AR
         public PlaceableObject led;
         public PlaceableObject resistor;
         public WireConnector wire;
+        public LedGlow ledGlow;
 
         [Header("AR Camera screen")]
         public DetectionStatusPill detectionPill;
@@ -130,8 +131,15 @@ namespace CircuitAR.AR
         // is a plain SetActive() and this project already relies on OnEnable for "sub-step shown."
         public void PlayConnectWireAudio() => PlayClip(audioConnectWire);
 
-        // Wired to the Final Step Complete ("THE LED IS ON") screen's ScreenAudioTrigger (no delay).
-        public void PlayCircuitCompleteAudio() => PlayClip(audioCircuitComplete);
+        // Wired to the Final Step Complete ("THE LED IS ON") screen's ScreenAudioTrigger (no
+        // delay). That screen is SHARED by all 3 circuit modes, so this fires every time ANY mode
+        // finishes — gated on mode so it doesn't play LED's own clip over Series/Parallel's own
+        // audioStep4 (which each of those controllers already plays explicitly in FinishCircuit()).
+        public void PlayCircuitCompleteAudio()
+        {
+            if (CircuitModeState.Active != CircuitMode.Led) return;
+            PlayClip(audioCircuitComplete);
+        }
 
         // Disables `gatedButton`, plays `clip`, and re-enables it once the clip finishes — or
         // immediately if the clip isn't assigned or audio is muted, so muting can never
@@ -185,6 +193,7 @@ namespace CircuitAR.AR
             if (led != null) led.ResetToTray();
             if (resistor != null) resistor.ResetToTray();
             if (wire != null) wire.ResetToTray();
+            if (ledGlow != null) ledGlow.SetOn(false);
             if (ledCallout != null) ledCallout.ResetState();
             if (resistorCallout != null) resistorCallout.ResetState();
             if (wireCallout != null) wireCallout.ResetState();
@@ -387,9 +396,11 @@ namespace CircuitAR.AR
 
         private void ShowLedCompleteText()
         {
+            if (ledGlow != null) ledGlow.SetOn(true);
             if (completeTextOverride != null)
                 completeTextOverride.SetText("✓ CIRCUIT COMPLETE", "THE LED IS ON",
-                    "All required connections were detected. The loop is closed, so the LED switches on.");
+                    "All required connections were detected. The loop is closed, so the LED switches on.",
+                    "LED CIRCUIT");
         }
     }
 }

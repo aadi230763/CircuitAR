@@ -21,7 +21,7 @@ namespace CircuitAR.EditorUIBuilders
             Wire(IconButton(c, "Btn_Back", "‹", 16f, 54f), ScreenNames.Incomplete);
             IconButton(c, "Btn_Help", "?", 334f, 54f);
             MuteButton(c, 284f, 54f);
-            SessionPill(c, "LED CIRCUIT", 180f, new[] { Green, Green, Green, Green });
+            var sessionPill = SessionPill(c, "LED CIRCUIT", 180f, new[] { Green, Green, Green, Green });
             TrackingPill(c);
             CircuitStatusPill(c, complete: true);
 
@@ -57,6 +57,7 @@ namespace CircuitAR.EditorUIBuilders
             textOverride.chipText = chip.GetComponentInChildren<TextMeshProUGUI>();
             textOverride.titleText = title;
             textOverride.bodyText = body;
+            textOverride.sessionText = sessionPill.Find("Txt_Session")?.GetComponent<TextMeshProUGUI>();
 
             HomeIndicator(s.root);
             EndScreen(s);

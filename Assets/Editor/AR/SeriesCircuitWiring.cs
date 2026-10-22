@@ -52,8 +52,10 @@ namespace CircuitAR.EditorAR
             var battery = arContent.Find("Battery")?.GetComponent<PlaceableObject>();
             var r1 = arContent.Find("Resistor1")?.GetComponent<PlaceableObject>();
             var led1 = arContent.Find("LED1")?.GetComponent<PlaceableObject>();
+            var led1Glow = arContent.Find("LED1")?.GetComponent<LedGlow>();
             var r2 = arContent.Find("Resistor2")?.GetComponent<PlaceableObject>();
             var led2 = arContent.Find("LED2")?.GetComponent<PlaceableObject>();
+            var led2Glow = arContent.Find("LED2")?.GetComponent<LedGlow>();
             var wBattR1 = arContent.Find("Wire_BatteryToR1")?.GetComponent<WireConnector>();
             var wR1Led1 = arContent.Find("Wire_R1ToLed1")?.GetComponent<WireConnector>();
             var wLed1R2 = arContent.Find("Wire_Led1ToR2")?.GetComponent<WireConnector>();
@@ -140,6 +142,7 @@ namespace CircuitAR.EditorAR
 
             ctrl.arContentRoot = arContent.gameObject;
             ctrl.battery = battery; ctrl.resistor1 = r1; ctrl.led1 = led1; ctrl.resistor2 = r2; ctrl.led2 = led2;
+            ctrl.led1Glow = led1Glow; ctrl.led2Glow = led2Glow; // null until menu 2 is re-run with LedGlow added
             ctrl.wireBattToR1 = wBattR1; ctrl.wireR1ToLed1 = wR1Led1; ctrl.wireLed1ToR2 = wLed1R2;
             ctrl.wireR2ToLed2 = wR2Led2; ctrl.wireLed2ToBatt = wLed2Batt;
             ctrl.placeBatteryCallout = placeBatteryCallout; ctrl.placeR1Callout = placeR1Callout; ctrl.wireBattR1Callout = wireBattR1Callout;

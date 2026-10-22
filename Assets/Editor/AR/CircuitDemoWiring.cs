@@ -54,6 +54,7 @@ namespace CircuitAR.EditorAR
             }
 
             var led = arContent.Find("LED")?.GetComponent<PlaceableObject>();
+            var ledGlow = arContent.Find("LED")?.GetComponent<LedGlow>();
             var resistor = arContent.Find("Resistor")?.GetComponent<PlaceableObject>();
             var wire = arContent.Find("Wire")?.GetComponent<WireConnector>();
             var ledAnchor = arContent.Find("Anchor_LEDSlot");
@@ -136,6 +137,7 @@ namespace CircuitAR.EditorAR
 
             ctrl.arContentRoot = arContent.gameObject;
             ctrl.led = led;
+            ctrl.ledGlow = ledGlow; // null until Tools > CircuitAR > AR > 2 is re-run with LedGlow added
             ctrl.resistor = resistor;
             ctrl.wire = wire;
             ctrl.ledCallout = ledCallout;

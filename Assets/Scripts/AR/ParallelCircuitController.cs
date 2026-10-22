@@ -27,8 +27,10 @@ namespace CircuitAR.AR
         public PlaceableObject battery;
         public PlaceableObject resistor1;
         public PlaceableObject led1;
+        public LedGlow led1Glow;
         public PlaceableObject resistor2;
         public PlaceableObject led2;
+        public LedGlow led2Glow;
         public WireConnector wireBattToR1;   // step 1: battery(+) to branch 1's positive junction
         public WireConnector wireR1ToLed1;   // step 2: branch 1 internal
         public WireConnector wireR2ToLed2;   // step 2: branch 2 internal
@@ -156,6 +158,8 @@ namespace CircuitAR.AR
             if (led1 != null) led1.ResetToTray();
             if (resistor2 != null) resistor2.ResetToTray();
             if (led2 != null) led2.ResetToTray();
+            if (led1Glow != null) led1Glow.SetOn(false);
+            if (led2Glow != null) led2Glow.SetOn(false);
             if (wireBattToR1 != null) wireBattToR1.ResetToTray();
             if (wireR1ToLed1 != null) wireR1ToLed1.ResetToTray();
             if (wireR2ToLed2 != null) wireR2ToLed2.ResetToTray();
@@ -247,10 +251,12 @@ namespace CircuitAR.AR
         // Wired to Step 3's NEXT button.
         public void FinishCircuit()
         {
-            PlayClip(audioStep4);
+            if (led1Glow != null) led1Glow.SetOn(true);
+            if (led2Glow != null) led2Glow.SetOn(true);
             if (completeTextOverride != null)
                 completeTextOverride.SetText("✓ CIRCUIT COMPLETE", "BOTH LEDs ARE ON",
-                    "Excellent! Your parallel circuit is complete. Check that both LEDs are glowing.");
+                    "Excellent! Your parallel circuit is complete. Check that both LEDs are glowing.",
+                    "PARALLEL CIRCUIT");
 
             var mgr = screenManager != null ? screenManager : FindObjectOfType<UIScreenManager>();
             if (mgr == null)

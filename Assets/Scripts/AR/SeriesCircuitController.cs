@@ -28,8 +28,10 @@ namespace CircuitAR.AR
         public PlaceableObject battery;
         public PlaceableObject resistor1;
         public PlaceableObject led1;
+        public LedGlow led1Glow;
         public PlaceableObject resistor2;
         public PlaceableObject led2;
+        public LedGlow led2Glow;
         public WireConnector wireBattToR1;
         public WireConnector wireR1ToLed1;
         public WireConnector wireLed1ToR2;
@@ -157,6 +159,8 @@ namespace CircuitAR.AR
             if (led1 != null) led1.ResetToTray();
             if (resistor2 != null) resistor2.ResetToTray();
             if (led2 != null) led2.ResetToTray();
+            if (led1Glow != null) led1Glow.SetOn(false);
+            if (led2Glow != null) led2Glow.SetOn(false);
             if (wireBattToR1 != null) wireBattToR1.ResetToTray();
             if (wireR1ToLed1 != null) wireR1ToLed1.ResetToTray();
             if (wireLed1ToR2 != null) wireLed1ToR2.ResetToTray();
@@ -246,10 +250,12 @@ namespace CircuitAR.AR
         // there's nothing left to "check" — same reasoning as the LED Circuit's Step 2-3 NEXT).
         public void FinishCircuit()
         {
-            PlayClip(audioStep4);
+            if (led1Glow != null) led1Glow.SetOn(true);
+            if (led2Glow != null) led2Glow.SetOn(true);
             if (completeTextOverride != null)
                 completeTextOverride.SetText("✓ CIRCUIT COMPLETE", "THE LEDs ARE ON",
-                    "Great! Your series circuit is complete. Observe the glowing LEDs.");
+                    "Great! Your series circuit is complete. Observe the glowing LEDs.",
+                    "SERIES CIRCUIT");
 
             var mgr = screenManager != null ? screenManager : FindObjectOfType<UIScreenManager>();
             if (mgr == null)
@@ -257,7 +263,11 @@ namespace CircuitAR.AR
                 Debug.LogWarning("[CircuitAR] SeriesCircuitController.FinishCircuit(): no UIScreenManager found.");
                 return;
             }
+            // ShowScreen deactivates Canvas_SeriesStep3 first, which fires that screen's
+            // ScreenAudioTrigger.onHide -> StopAudio() on this same AudioSource — playing
+            // audioStep4 BEFORE this line used to get it killed the instant it started.
             mgr.ShowScreen(CompleteScreenName);
+            PlayClip(audioStep4);
         }
     }
 }

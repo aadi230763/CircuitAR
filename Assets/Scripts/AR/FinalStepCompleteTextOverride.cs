@@ -12,12 +12,14 @@ namespace CircuitAR.AR
         public TextMeshProUGUI chipText;
         public TextMeshProUGUI titleText;
         public TextMeshProUGUI bodyText;
+        public TextMeshProUGUI sessionText; // the top "LED CIRCUIT" / "SERIES CIRCUIT" pill
 
-        public void SetText(string chip, string title, string body)
+        public void SetText(string chip, string title, string body, string sessionLabel)
         {
             if (chipText != null) chipText.text = chip;
             if (titleText != null) titleText.text = title;
             if (bodyText != null) bodyText.text = body;
+            if (sessionText != null) sessionText.text = sessionLabel;
         }
     }
 }

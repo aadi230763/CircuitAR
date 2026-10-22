@@ -82,6 +82,7 @@ namespace CircuitAR.EditorAR
 
             var ledGO = InstantiateAt(ledPrefab, root, "LED", Vector3.zero);
             AttachPlaceable(ledGO, LedTrayPos, new Vector3(0f, 0f, 90f), LedSlotPos, Vector3.zero);
+            ledGO.AddComponent<LedGlow>();
 
             var resistorGO = InstantiateAt(resistorPrefab, root, "Resistor", Vector3.zero);
             AttachPlaceable(resistorGO, ResistorTrayPos, new Vector3(0f, 30f, 0f), ResistorSlotPos, Vector3.zero);
@@ -140,12 +141,14 @@ namespace CircuitAR.EditorAR
 
             var led1 = InstantiateAt(ledPrefab, root, "LED1", Vector3.zero);
             AttachPlaceable(led1, SeriesLed1Tray, new Vector3(0f, 0f, 90f), SeriesLed1Slot, Vector3.zero);
+            led1.AddComponent<LedGlow>();
 
             var r2 = InstantiateAt(resistorPrefab, root, "Resistor2", Vector3.zero);
             AttachPlaceable(r2, SeriesR2Tray, new Vector3(0f, 30f, 0f), SeriesR2Slot, Vector3.zero);
 
             var led2 = InstantiateAt(ledPrefab, root, "LED2", Vector3.zero);
             AttachPlaceable(led2, SeriesLed2Tray, new Vector3(0f, 0f, 90f), SeriesLed2Slot, Vector3.zero);
+            led2.AddComponent<LedGlow>();
 
             var wireTray = InstantiateAt(wirePrefab, root, "WireTray", Vector3.zero);
             SetLooseTrayLine(wireTray, new Vector3(-0.078f, 0.002f, -0.052f));
@@ -209,12 +212,14 @@ namespace CircuitAR.EditorAR
 
             var led1 = InstantiateAt(ledPrefab, root, "LED1", Vector3.zero);
             AttachPlaceable(led1, ParallelLed1Tray, new Vector3(0f, 0f, 90f), ParallelLed1Slot, Vector3.zero);
+            led1.AddComponent<LedGlow>();
 
             var r2 = InstantiateAt(resistorPrefab, root, "Resistor2", Vector3.zero);
             AttachPlaceable(r2, ParallelR2Tray, new Vector3(0f, 30f, 0f), ParallelR2Slot, new Vector3(0f, 90f, 0f));
 
             var led2 = InstantiateAt(ledPrefab, root, "LED2", Vector3.zero);
             AttachPlaceable(led2, ParallelLed2Tray, new Vector3(0f, 0f, 90f), ParallelLed2Slot, Vector3.zero);
+            led2.AddComponent<LedGlow>();
 
             var wireTray = InstantiateAt(wirePrefab, root, "WireTray", Vector3.zero);
             SetLooseTrayLine(wireTray, new Vector3(-0.078f, 0.002f, -0.052f));
