@@ -264,7 +264,11 @@ namespace CircuitAR.AR
                 Debug.LogWarning("[CircuitAR] ParallelCircuitController.FinishCircuit(): no UIScreenManager found.");
                 return;
             }
+            // ShowScreen deactivates Canvas_ParallelStep3 first, which fires that screen's
+            // ScreenAudioTrigger.onHide -> StopAudio() on this same AudioSource — playing
+            // audioStep4 BEFORE this line would get it killed the instant it started.
             mgr.ShowScreen(CompleteScreenName);
+            PlayClip(audioStep4);
         }
     }
 }
