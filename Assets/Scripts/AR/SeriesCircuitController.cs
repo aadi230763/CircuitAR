@@ -62,6 +62,7 @@ namespace CircuitAR.AR
         public AudioClip audioStep2;
         public AudioClip audioStep3;
         public AudioClip audioStep4;
+        public AudioClip audioQuiz;
 
         public UIScreenManager screenManager;
         public FinalStepCompleteTextOverride completeTextOverride;
@@ -267,7 +268,15 @@ namespace CircuitAR.AR
             // ScreenAudioTrigger.onHide -> StopAudio() on this same AudioSource — playing
             // audioStep4 BEFORE this line used to get it killed the instant it started.
             mgr.ShowScreen(CompleteScreenName);
+            StartCoroutine(PlayCompletionAudioSequence());
+        }
+
+        private IEnumerator PlayCompletionAudioSequence()
+        {
             PlayClip(audioStep4);
+            if (audioStep4 != null && !CircuitDemoController.IsAudioMuted)
+                yield return new WaitForSeconds(audioStep4.length + 0.3f);
+            PlayClip(audioQuiz);
         }
     }
 }

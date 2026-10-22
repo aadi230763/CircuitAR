@@ -25958,6 +25958,7 @@ MonoBehaviour:
   audioStep2: {fileID: 8300000, guid: ff1a94ee7916f4329b80fa774f6178d4, type: 3}
   audioStep3: {fileID: 8300000, guid: e10592661cae7421fa2b0236f2b0e47b, type: 3}
   audioStep4: {fileID: 8300000, guid: 8b364576ca668493797e9007a49216fd, type: 3}
+  audioQuiz: {fileID: 8300000, guid: 786626de5e51b49bc86f051ed5e1c662, type: 3}
   screenManager: {fileID: 1945616671}
   completeTextOverride: {fileID: 777335918}
 --- !u!4 &434143389
@@ -52821,6 +52822,7 @@ MonoBehaviour:
   audioStep2: {fileID: 8300000, guid: 2d90e16ed078d46dea049466fe9f270e, type: 3}
   audioStep3: {fileID: 8300000, guid: 575eb1d8bedb04eb6b2c28c2921b5919, type: 3}
   audioStep4: {fileID: 8300000, guid: 984047e0a6ea14ccdbe7e33f9dfd9585, type: 3}
+  audioQuiz: {fileID: 8300000, guid: 786626de5e51b49bc86f051ed5e1c662, type: 3}
   screenManager: {fileID: 1945616671}
   completeTextOverride: {fileID: 777335918}
 --- !u!4 &918802390
