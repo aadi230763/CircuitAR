@@ -9641,7 +9641,7 @@ MonoBehaviour:
   endLocal: {x: -0.03, y: 0.031999998, z: 0.015}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &137451381
 GameObject:
   m_ObjectHideFlags: 0
@@ -9814,7 +9814,7 @@ MonoBehaviour:
   endLocal: {x: 0.03, y: 0.031999998, z: 0.015}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &141197092
 GameObject:
   m_ObjectHideFlags: 0
@@ -17940,7 +17940,7 @@ MonoBehaviour:
   endLocal: {x: 0.05, y: 0.02, z: 0}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &292033512
 GameObject:
   m_ObjectHideFlags: 0
@@ -26434,7 +26434,7 @@ MonoBehaviour:
   endLocal: {x: 0.015, y: 0.018, z: 0}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &441701623
 GameObject:
   m_ObjectHideFlags: 0
@@ -41538,7 +41538,7 @@ MonoBehaviour:
   endLocal: {x: -0.03, y: 0.024, z: -0.015}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &740464722
 GameObject:
   m_ObjectHideFlags: 0
@@ -49863,7 +49863,7 @@ MonoBehaviour:
   endLocal: {x: 0.03, y: 0.016, z: 0}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &880129317
 GameObject:
   m_ObjectHideFlags: 0
@@ -59935,7 +59935,7 @@ MonoBehaviour:
   endLocal: {x: -0.03, y: 0.024, z: -0.015}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1027465093
 GameObject:
   m_ObjectHideFlags: 0
@@ -85577,7 +85577,7 @@ MonoBehaviour:
   endLocal: {x: -0.03, y: 0.031999998, z: 0.015}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1455681329
 GameObject:
   m_ObjectHideFlags: 0
@@ -96483,7 +96483,7 @@ MonoBehaviour:
   endLocal: {x: 0.03, y: 0.031999998, z: 0.015}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1637824799
 GameObject:
   m_ObjectHideFlags: 0
@@ -100202,7 +100202,7 @@ MonoBehaviour:
   endLocal: {x: -0.105, y: 0.03, z: -0.04}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1724925954
 GameObject:
   m_ObjectHideFlags: 0
@@ -100450,7 +100450,7 @@ MonoBehaviour:
   endLocal: {x: -0.06, y: 0.018, z: 0}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1728716713
 GameObject:
   m_ObjectHideFlags: 0
@@ -117531,7 +117531,7 @@ MonoBehaviour:
   endLocal: {x: -0.025, y: 0.02, z: 0}
   arcHeight: 0.018
   segments: 20
-  pulseColor: {r: 1, g: 0.9, b: 0.45, a: 1}
+  pulseColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &2034116647
 GameObject:
   m_ObjectHideFlags: 0

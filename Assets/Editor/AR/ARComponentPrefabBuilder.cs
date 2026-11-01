@@ -30,7 +30,7 @@ namespace CircuitAR.EditorAR
         private const float LedTotalHeight = 0.025f;      // matches the old capsule's total height
         private const float ResistorTotalLength = 0.035f; // matches the old cylinder body length
 
-        private static readonly Color WireColor = new Color(0.85f, 0.35f, 0.1f);
+        private static readonly Color WireColor = new Color(0.85f, 0f, 0f);
 
         // Battery: no battery exists in the source asset, so this stays primitive-built (same
         // approach the wire already uses). Proportioned like a real 9V: ~22mm x 35mm x 14mm.
@@ -153,7 +153,7 @@ namespace CircuitAR.EditorAR
             var root = new GameObject("Wire", typeof(LineRenderer));
             var lr = root.GetComponent<LineRenderer>();
             lr.useWorldSpace = false;
-            lr.startWidth = lr.endWidth = 0.004f;
+            lr.startWidth = lr.endWidth = 0.0025f;
             lr.numCapVertices = 4;
             lr.sharedMaterial = wireMat;
             lr.SetPosition(0, Vector3.zero);

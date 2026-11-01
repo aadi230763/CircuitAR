@@ -14,7 +14,7 @@ namespace CircuitAR.AR
         public Vector3 endLocal;
         public float arcHeight = 0.018f;
         public int segments = 20;
-        public Color pulseColor = new Color(1f, 0.9f, 0.45f);
+        public Color pulseColor = Color.red;
 
         public bool IsPlaced { get; private set; }
 
