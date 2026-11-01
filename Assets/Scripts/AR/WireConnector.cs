@@ -14,7 +14,7 @@ namespace CircuitAR.AR
         public Vector3 endLocal;
         public float arcHeight = 0.018f;
         public int segments = 20;
-        public Color pulseColor = Color.red;
+        public Color pulseColor = Color.green;
 
         private Transform startConnector;
         private Transform endConnector;
