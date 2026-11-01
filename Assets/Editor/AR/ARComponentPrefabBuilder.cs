@@ -30,7 +30,7 @@ namespace CircuitAR.EditorAR
         private const float LedTotalHeight = 0.025f;      // matches the old capsule's total height
         private const float ResistorTotalLength = 0.035f; // matches the old cylinder body length
 
-        private static readonly Color WireColor = new Color(0.85f, 0f, 0f);
+        private static readonly Color WireColor = Color.red;
         private static readonly Color WireHousingColor = new Color(0.035f, 0.04f, 0.045f);
         private static readonly Color WirePinColor = new Color(0.72f, 0.75f, 0.78f);
 
