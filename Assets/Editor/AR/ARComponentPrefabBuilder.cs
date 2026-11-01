@@ -37,9 +37,12 @@ namespace CircuitAR.EditorAR
         private const float BatteryWidth = 0.022f;
         private const float BatteryHeight = 0.035f;
         private const float BatteryDepth = 0.014f;
-        private static readonly Color BatteryBodyColor = new Color(0.08f, 0.07f, 0.07f);
-        private static readonly Color BatteryCapColor = new Color(0.65f, 0.63f, 0.6f);
-        private static readonly Color BatteryTerminalColor = new Color(0.75f, 0.73f, 0.65f);
+        private static readonly Color BatteryBodyColor = new Color(0.035f, 0.045f, 0.055f);
+        private static readonly Color BatteryCapColor = new Color(0.025f, 0.03f, 0.035f);
+        private static readonly Color BatteryLabelColor = new Color(0.95f, 0.78f, 0.06f);
+        private static readonly Color BatteryTerminalColor = new Color(0.72f, 0.74f, 0.76f);
+        private static readonly Color BatteryTerminalInsetColor = new Color(0.12f, 0.13f, 0.14f);
+        private static readonly Color BatteryPolarityColor = new Color(0.93f, 0.94f, 0.9f);
 
         [MenuItem("Tools/CircuitAR/AR/1 Build Component Prefabs")]
         public static void Build()
@@ -162,51 +165,125 @@ namespace CircuitAR.EditorAR
             SaveAndDestroy(root, "Wire");
         }
 
-        // Simple primitive 9V-style battery (Series/Parallel circuits): a dark body, a lighter cap,
-        // and two small terminal nubs. Root origin at the base, matching every other component.
+        // Procedural 9V battery shell, label band, snap terminals, and top polarity marks.
+        // Root origin and overall footprint stay fixed so existing tray/slot placement is unchanged.
         private static void BuildBatteryPrefab()
         {
             var root = new GameObject("Battery");
             var bodyMat = CreateSimpleMaterial("Mat_BatteryBody", BatteryBodyColor);
             var capMat = CreateSimpleMaterial("Mat_BatteryCap", BatteryCapColor);
+            var bandMat = CreateSimpleMaterial("Mat_BatteryLabel", BatteryLabelColor);
             var terminalMat = CreateSimpleMaterial("Mat_BatteryTerminal", BatteryTerminalColor);
+            var insetMat = CreateSimpleMaterial("Mat_BatteryTerminalInset", BatteryTerminalInsetColor);
+            var markMat = CreateSimpleMaterial("Mat_BatteryPolarity", BatteryPolarityColor);
+            SetMaterialFinish(bodyMat, 0.05f, 0.28f);
+            SetMaterialFinish(capMat, 0.05f, 0.3f);
+            SetMaterialFinish(bandMat, 0.02f, 0.32f);
+            SetMaterialFinish(terminalMat, 0.78f, 0.72f);
+            SetMaterialFinish(insetMat, 0.45f, 0.5f);
+            SetMaterialFinish(markMat, 0f, 0.35f);
 
-            float capHeight = BatteryHeight * 0.15f;
-            float bodyHeight = BatteryHeight - capHeight;
+            // Preserve the current 22 x 35 x 14 mm outer dimensions and base pivot.
+            float bodyHeight = BatteryHeight * 0.76f;
+            float bandHeight = BatteryHeight * 0.17f;
+            float capHeight = BatteryHeight - bodyHeight - bandHeight;
 
-            var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            body.name = "Body";
-            body.transform.SetParent(root.transform, false);
-            body.transform.localPosition = new Vector3(0f, bodyHeight / 2f, 0f);
-            body.transform.localScale = new Vector3(BatteryWidth, bodyHeight, BatteryDepth);
-            body.GetComponent<Renderer>().sharedMaterial = bodyMat;
-            Object.DestroyImmediate(body.GetComponent<Collider>());
+            CreateBatteryBlock(root.transform, "Body", bodyMat,
+                new Vector3(BatteryWidth, bodyHeight, BatteryDepth),
+                new Vector3(0f, bodyHeight / 2f, 0f));
+            CreateBatteryBlock(root.transform, "LabelBand", bandMat,
+                new Vector3(BatteryWidth, bandHeight, BatteryDepth),
+                new Vector3(0f, bodyHeight + bandHeight / 2f, 0f));
+            CreateBatteryBlock(root.transform, "Cap", capMat,
+                new Vector3(BatteryWidth, capHeight, BatteryDepth),
+                new Vector3(0f, bodyHeight + bandHeight + capHeight / 2f, 0f));
 
-            var cap = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cap.name = "Cap";
-            cap.transform.SetParent(root.transform, false);
-            cap.transform.localPosition = new Vector3(0f, bodyHeight + capHeight / 2f, 0f);
-            cap.transform.localScale = new Vector3(BatteryWidth * 0.9f, capHeight, BatteryDepth * 0.9f);
-            cap.GetComponent<Renderer>().sharedMaterial = capMat;
-            Object.DestroyImmediate(cap.GetComponent<Collider>());
+            float terminalBaseY = BatteryHeight;
+            float terminalHeight = 0.002f;
+            float posX = -BatteryWidth * 0.22f;
+            float negX = BatteryWidth * 0.22f;
+            float positiveDiameter = BatteryWidth * 0.19f;
+            float negativeDiameter = BatteryWidth * 0.27f;
 
-            float terminalD = BatteryWidth * 0.18f;
-            float terminalH = capHeight * 0.6f;
-            AddTerminal(root.transform, "Terminal_Positive", -BatteryWidth * 0.22f, BatteryHeight, terminalD, terminalH, terminalMat);
-            AddTerminal(root.transform, "Terminal_Negative", BatteryWidth * 0.22f, BatteryHeight, terminalD, terminalH, terminalMat);
+            // Positive is the smaller raised snap stud; negative is the wider female snap cup.
+            AddTerminal(root.transform, "Terminal_Positive", posX, terminalBaseY,
+                positiveDiameter, terminalHeight, terminalMat);
+            AddTerminal(root.transform, "Terminal_PositiveContact", posX,
+                terminalBaseY + terminalHeight * 0.82f, positiveDiameter * 0.56f,
+                terminalHeight * 0.28f, terminalMat);
+            AddTerminal(root.transform, "Terminal_Negative", negX, terminalBaseY,
+                negativeDiameter, terminalHeight, terminalMat);
+            AddTerminal(root.transform, "Terminal_NegativeSocket", negX,
+                terminalBaseY + terminalHeight * 0.79f, negativeDiameter * 0.58f,
+                terminalHeight * 0.24f, insetMat);
+
+            float markZ = -BatteryDepth * 0.29f;
+            AddPolarityMark(root.transform, "Polarity_Positive", posX, BatteryHeight + 0.000025f,
+                markZ, true, markMat);
+            AddPolarityMark(root.transform, "Polarity_Negative", negX, BatteryHeight + 0.000025f,
+                markZ, false, markMat);
 
             SaveAndDestroy(root, "Battery");
         }
 
-        private static void AddTerminal(Transform parent, string name, float xOffset, float baseY, float diameter, float height, Material mat)
+        private static void CreateBatteryBlock(Transform parent, string name, Material mat,
+            Vector3 size, Vector3 position)
         {
-            var t = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            t.name = name;
-            t.transform.SetParent(parent, false);
-            t.transform.localPosition = new Vector3(xOffset, baseY + height / 2f, 0f);
-            t.transform.localScale = new Vector3(diameter, height / 2f, diameter); // cylinder default height = 2
-            t.GetComponent<Renderer>().sharedMaterial = mat;
-            Object.DestroyImmediate(t.GetComponent<Collider>());
+            var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            block.name = name;
+            block.transform.SetParent(parent, false);
+            block.transform.localPosition = position;
+            block.transform.localScale = size;
+            block.GetComponent<Renderer>().sharedMaterial = mat;
+            Object.DestroyImmediate(block.GetComponent<Collider>());
+        }
+
+        private static void AddTerminal(Transform parent, string name, float xOffset, float baseY,
+            float diameter, float height, Material mat)
+        {
+            var terminal = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            terminal.name = name;
+            terminal.transform.SetParent(parent, false);
+            terminal.transform.localPosition = new Vector3(xOffset, baseY + height / 2f, 0f);
+            terminal.transform.localScale = new Vector3(diameter, height / 2f, diameter);
+            terminal.GetComponent<Renderer>().sharedMaterial = mat;
+            Object.DestroyImmediate(terminal.GetComponent<Collider>());
+        }
+
+        private static void AddPolarityMark(Transform parent, string name, float x, float y,
+            float z, bool positive, Material mat)
+        {
+            var group = new GameObject(name);
+            group.transform.SetParent(parent, false);
+            group.transform.localPosition = new Vector3(x, y, z);
+
+            const float barLength = 0.00125f;
+            const float barWidth = 0.00022f;
+            CreatePolarityBar(group.transform, "Horizontal", Vector3.zero,
+                new Vector3(barLength, 0.00012f, barWidth), mat);
+            if (positive)
+                CreatePolarityBar(group.transform, "Vertical", Vector3.zero,
+                    new Vector3(barWidth, 0.00012f, barLength), mat);
+        }
+
+        private static void CreatePolarityBar(Transform parent, string name, Vector3 position,
+            Vector3 size, Material mat)
+        {
+            var bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            bar.name = name;
+            bar.transform.SetParent(parent, false);
+            bar.transform.localPosition = position;
+            bar.transform.localScale = size;
+            bar.GetComponent<Renderer>().sharedMaterial = mat;
+            Object.DestroyImmediate(bar.GetComponent<Collider>());
+        }
+
+        private static void SetMaterialFinish(Material mat, float metallic, float smoothness)
+        {
+            if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", metallic);
+            if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", smoothness);
+            if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", smoothness);
+            EditorUtility.SetDirty(mat);
         }
 
         // ------------------------------------------------------------------
