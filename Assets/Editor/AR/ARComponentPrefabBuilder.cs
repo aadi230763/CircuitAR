@@ -31,6 +31,8 @@ namespace CircuitAR.EditorAR
         private const float ResistorTotalLength = 0.035f; // matches the old cylinder body length
 
         private static readonly Color WireColor = new Color(0.85f, 0f, 0f);
+        private static readonly Color WireHousingColor = new Color(0.035f, 0.04f, 0.045f);
+        private static readonly Color WirePinColor = new Color(0.72f, 0.75f, 0.78f);
 
         // Battery: no battery exists in the source asset, so this stays primitive-built (same
         // approach the wire already uses). Proportioned like a real 9V: ~22mm x 35mm x 14mm.
@@ -60,12 +62,25 @@ namespace CircuitAR.EditorAR
             BuildBreadboardPrefab(glbAsset);
             BuildLedPrefab(glbAsset);
             BuildResistorPrefab(glbAsset);
-            BuildWirePrefab(CreateSimpleMaterial("Mat_Wire", WireColor));
+            BuildWirePrefab(CreateSimpleMaterial("Mat_Wire", WireColor),
+                CreateSimpleMaterial("Mat_WireHousing", WireHousingColor),
+                CreateSimpleMaterial("Mat_WirePin", WirePinColor));
             BuildBatteryPrefab();
 
             AssetDatabase.SaveAssets();
             Debug.Log("[CircuitAR] Component prefabs built from " + SourceAssetPath + " into " + PrefabDir +
                        ". Next: Tools > CircuitAR > AR > 2 Build AR Content In Scene.");
+        }
+
+        [MenuItem("Tools/CircuitAR/AR/6 Build Wire Prefab Only")]
+        public static void BuildWireOnly()
+        {
+            EnsureFolders();
+            BuildWirePrefab(CreateSimpleMaterial("Mat_Wire", WireColor),
+                CreateSimpleMaterial("Mat_WireHousing", WireHousingColor),
+                CreateSimpleMaterial("Mat_WirePin", WirePinColor));
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CircuitAR] Wire prefab and materials rebuilt. Existing circuit prefabs use the shared wire asset.");
         }
 
         // ------------------------------------------------------------------
@@ -149,10 +164,13 @@ namespace CircuitAR.EditorAR
             SaveAndDestroy(root, "Resistor");
         }
 
-        // Unchanged from the placeholder pass: the wire stays a LineRenderer (no wire model needed
-        // or used from the source asset).
-        private static void BuildWirePrefab(Material wireMat)
+        // The flexible red cable remains a LineRenderer; primitive end fittings add low-cost detail.
+        private static void BuildWirePrefab(Material wireMat, Material housingMat, Material pinMat)
         {
+            SetMaterialFinish(wireMat, 0.04f, 0.58f);
+            SetMaterialFinish(housingMat, 0.02f, 0.24f);
+            SetMaterialFinish(pinMat, 0.82f, 0.72f);
+
             var root = new GameObject("Wire", typeof(LineRenderer));
             var lr = root.GetComponent<LineRenderer>();
             lr.useWorldSpace = false;
@@ -162,7 +180,36 @@ namespace CircuitAR.EditorAR
             lr.SetPosition(0, Vector3.zero);
             lr.SetPosition(1, new Vector3(0.03f, 0.01f, 0f));
 
+            AddWireConnector(root.transform, "Connector_Start", housingMat, pinMat, false);
+            AddWireConnector(root.transform, "Connector_End", housingMat, pinMat, true);
+            root.transform.Find("Connector_Start").gameObject.SetActive(false);
+            root.transform.Find("Connector_End").gameObject.SetActive(false);
+
             SaveAndDestroy(root, "Wire");
+        }
+
+        private static void AddWireConnector(Transform parent, string name, Material housingMat,
+            Material pinMat, bool includePin)
+        {
+            var connector = new GameObject(name);
+            connector.transform.SetParent(parent, false);
+
+            var housing = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            housing.name = "Housing";
+            housing.transform.SetParent(connector.transform, false);
+            housing.transform.localScale = new Vector3(0.0026f, 0.0026f, 0.0045f);
+            housing.GetComponent<Renderer>().sharedMaterial = housingMat;
+            Object.DestroyImmediate(housing.GetComponent<Collider>());
+
+            if (!includePin) return;
+
+            var pin = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            pin.name = "MetalPin";
+            pin.transform.SetParent(connector.transform, false);
+            pin.transform.localPosition = new Vector3(0f, 0f, -0.00375f);
+            pin.transform.localScale = new Vector3(0.00065f, 0.00065f, 0.003f);
+            pin.GetComponent<Renderer>().sharedMaterial = pinMat;
+            Object.DestroyImmediate(pin.GetComponent<Collider>());
         }
 
         // Procedural 9V battery shell, label band, snap terminals, and top polarity marks.
